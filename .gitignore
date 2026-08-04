@@ -1,0 +1,22 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+
+# Local app/runtime files
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+
+# Android / Capacitor local artifacts
+**/local.properties
+**/android/app/build/
+**/android/build/
+**/.gradle/
+
+# Supabase local temp files
+frontend/supabase/.temp/
