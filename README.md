@@ -1,4 +1,4 @@
-# Zelo — Sistema de Gestão de Chamados e Manutenção de Condomínios (MVP)
+# Grupo GL — Sistema de Gestão de Chamados e Manutenção de Condomínios (MVP)
 
 Sistema mobile-first para abertura e acompanhamento de chamados de manutenção
 condominial, com autenticação real para a equipe interna (Admin, Compras, Artífice)
