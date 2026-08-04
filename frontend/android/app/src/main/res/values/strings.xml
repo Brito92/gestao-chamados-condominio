@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chamados Condomínio</string>
+    <string name="title_activity_main">Chamados Condomínio</string>
+    <string name="package_name">com.chamados.app</string>
+    <string name="custom_url_scheme">com.chamados.app</string>
+</resources>

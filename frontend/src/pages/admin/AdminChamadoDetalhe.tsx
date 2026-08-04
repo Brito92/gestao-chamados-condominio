@@ -1,0 +1,210 @@
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { LayoutInterno } from '@/components/LayoutInterno';
+import { BackButton } from '@/components/BackButton';
+import { ProgressoChamado } from '@/components/ProgressoChamado';
+import { HistoricoChamado } from '@/components/HistoricoChamado';
+import { VisualizadorImagem } from '@/components/VisualizadorImagem';
+import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
+import { supabase } from '@/lib/supabaseClient';
+import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import type { Usuario } from '@/types/database';
+
+const NAO_CANCELAVEL = new Set(['FINALIZADO', 'CANCELADO', 'REJEITADO']);
+
+export function AdminChamadoDetalhe() {
+  const { id } = useParams<{ id: string }>();
+  const { chamado, carregando, erro, recarregar } = useChamadoCompleto({ id });
+  const [cancelando, setCancelando] = useState(false);
+  const [usuarioAtribuidor, setUsuarioAtribuidor] = useState<Usuario | null>(null);
+  const [carregandoAtribuidor, setCarregandoAtribuidor] = useState(false);
+
+  // Carrega informação de quem atribuiu o artífice
+  useEffect(() => {
+    if (chamado?.artifice_atribuido_por) {
+      carregarUsuarioAtribuidor();
+    } else {
+      setUsuarioAtribuidor(null);
+    }
+  }, [chamado?.artifice_atribuido_por]);
+
+  async function carregarUsuarioAtribuidor() {
+    if (!chamado?.artifice_atribuido_por) return;
+    setCarregandoAtribuidor(true);
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('id', chamado.artifice_atribuido_por)
+        .maybeSingle<Usuario>();
+      if (error) throw error;
+      setUsuarioAtribuidor(data);
+    } catch (err) {
+      console.error('Erro ao carregar usuário atribuidor:', err);
+    } finally {
+      setCarregandoAtribuidor(false);
+    }
+  }
+
+  async function cancelarChamado() {
+    if (!chamado) return;
+    if (!confirm('Cancelar este chamado por inconsistência ou duplicidade?')) return;
+    setCancelando(true);
+    await supabase.from('chamados').update({ status: 'CANCELADO' }).eq('id', chamado.id);
+    await recarregar();
+    setCancelando(false);
+  }
+
+  if (carregando) {
+    return (
+      <LayoutInterno titulo="Chamado">
+        <p className="text-sm text-ardosia-400">Carregando...</p>
+      </LayoutInterno>
+    );
+  }
+
+  if (erro || !chamado) {
+    return (
+      <LayoutInterno titulo="Chamado">
+        <p className="text-sm text-red-600">{erro ?? 'Chamado não encontrado.'}</p>
+      </LayoutInterno>
+    );
+  }
+
+  return (
+    <LayoutInterno titulo={chamado.numero_chamado ? `Chamado #${chamado.numero_chamado}` : 'Chamado'}>
+      <div className="flex flex-col gap-4">
+        <BackButton />
+
+        <div className="card">
+          <ProgressoChamado status={chamado.status} />
+        </div>
+
+        <div className="card flex flex-col gap-3">
+          <div>
+            <p className="text-xs text-ardosia-400">Morador</p>
+            <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
+            <p className="text-sm text-ardosia-500">{chamado.morador_whatsapp}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-ardosia-400">Local</p>
+              <p className="text-sm font-medium text-ardosia-700">{chamado.local_problema}</p>
+            </div>
+            <div>
+              <p className="text-xs text-ardosia-400">Tipo</p>
+              <p className="text-sm font-medium text-ardosia-700">
+                {TIPO_PROBLEMA_LABEL[chamado.tipo_problema]}
+              </p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-ardosia-400">Descrição</p>
+            <p className="text-sm text-ardosia-600">{chamado.descricao}</p>
+          </div>
+          {chamado.observacao_aprovacao && (
+            <div className="bg-ambar-50 border border-ambar-200 rounded-lg p-3">
+              <p className="text-xs text-ambar-600 font-medium mb-1">Observação do admin (aprovação)</p>
+              <p className="text-sm text-ambar-800">{chamado.observacao_aprovacao}</p>
+            </div>
+          )}
+          {chamado.observacao_compras && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-600 font-medium mb-1">Observação de compras</p>
+              <p className="text-sm text-blue-800">{chamado.observacao_compras}</p>
+            </div>
+          )}
+          {chamado.observacao_artifice && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+              <p className="text-xs text-emerald-600 font-medium mb-1">Observação do artífice</p>
+              <p className="text-sm text-emerald-800">{chamado.observacao_artifice}</p>
+            </div>
+          )}
+          {chamado.motivo_rejeicao && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-xs text-red-600 font-medium mb-1">Motivo da rejeição</p>
+              <p className="text-sm text-red-800">{chamado.motivo_rejeicao}</p>
+            </div>
+          )}
+          {chamado.motivo_nao_execucao && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-xs text-orange-600 font-medium mb-1">Motivo da não execução</p>
+              <p className="text-sm text-orange-800">{chamado.motivo_nao_execucao}</p>
+            </div>
+          )}
+        </div>
+
+        {chamado.artifice_id && (
+          <div className="card flex flex-col gap-2">
+            <div>
+              <p className="text-xs text-ardosia-400">Artífice atribuído</p>
+              <p className="text-sm font-medium text-ardosia-700">{chamado.artifice_id}</p>
+            </div>
+            {!carregandoAtribuidor && usuarioAtribuidor && (
+              <div>
+                <p className="text-xs text-ardosia-400">Atribuído por</p>
+                <p className="text-sm text-ardosia-600">
+                  {usuarioAtribuidor.nome}
+                  {chamado.artifice_atribuido_em && (
+                    <span className="text-xs text-ardosia-400 ml-2">
+                      em{' '}
+                      {new Date(chamado.artifice_atribuido_em).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {chamado.anexos.length > 0 && (
+          <div className="card flex flex-col gap-3">
+            <p className="text-xs text-ardosia-400 font-medium">Anexos ({chamado.anexos.length})</p>
+            <div className="grid grid-cols-2 gap-3">
+              {chamado.anexos.map((a) => (
+                <div key={a.id} className="flex flex-col gap-2">
+                  <p className="text-xs text-ardosia-500">
+                    {a.tipo === 'FOTO_SOLICITACAO' && 'Foto da solicitação'}
+                    {a.tipo === 'ANEXO_REJEICAO' && 'Anexo da rejeição'}
+                    {a.tipo === 'ORCAMENTO' && 'Orçamento'}
+                    {a.tipo === 'COMPROVANTE_COMPRA' && 'Comprovante de compra'}
+                    {a.tipo === 'FOTO_ANTES' && 'Foto antes'}
+                    {a.tipo === 'FOTO_DEPOIS' && 'Foto depois'}
+                    {a.valor && ` - R$ ${a.valor}`}
+                  </p>
+                  <VisualizadorImagem
+                    url={a.url}
+                    alt={a.tipo}
+                    className="rounded-lg border border-ardosia-100 h-32 w-full object-cover"
+                  />
+                  {a.descricao && (
+                    <p className="text-xs text-ardosia-400">{a.descricao}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <p className="text-xs text-ardosia-400 mb-2">Histórico</p>
+          <div className="card">
+            <HistoricoChamado historico={chamado.historico} />
+          </div>
+        </div>
+
+        {!NAO_CANCELAVEL.has(chamado.status) && (
+          <button className="btn-perigo" onClick={cancelarChamado} disabled={cancelando}>
+            {cancelando ? 'Cancelando...' : 'Cancelar chamado'}
+          </button>
+        )}
+      </div>
+    </LayoutInterno>
+  );
+}

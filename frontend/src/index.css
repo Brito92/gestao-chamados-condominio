@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply text-ardosia-900;
+    /* Adiciona padding seguro para barras do sistema */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-xl border border-ardosia-200 bg-white px-4 py-3.5 text-sm text-ardosia-800
+      placeholder:text-ardosia-300 focus:outline-none focus:ring-2 focus:ring-ambar-400 focus:border-ambar-400
+      transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-ardosia-100 p-4
+      transition-shadow duration-200 hover:shadow-md;
+  }
+
+  .btn-primario {
+    @apply bg-ambar-500 hover:bg-ambar-600 active:bg-ambar-700 active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100 
+      text-ardosia-950 font-semibold rounded-xl px-4 py-3.5 text-center transition-all duration-200
+      shadow-sm hover:shadow-md;
+  }
+
+  .btn-secundario {
+    @apply bg-white border border-ardosia-200 hover:bg-ardosia-100 active:bg-ardosia-200 active:scale-[0.98] 
+      text-ardosia-700 font-semibold rounded-xl px-4 py-3.5 text-center transition-all duration-200;
+  }
+
+  .btn-perigo {
+    @apply bg-red-50 border border-red-200 hover:bg-red-100 active:bg-red-200 active:scale-[0.98] 
+      text-red-700 font-semibold rounded-xl px-4 py-3.5 text-center transition-all duration-200;
+  }
+}
