@@ -5,7 +5,7 @@ export function Home() {
     <div className="min-h-screen bg-ardosia-800 flex flex-col justify-between px-6 py-10">
       <div className="max-w-lg w-full mx-auto flex-1 flex flex-col justify-center gap-12">
         <div className="text-center">
-          <p className="font-display font-extrabold text-5xl text-white mb-3">Chamados Condomínio</p>
+          <p className="font-display font-extrabold text-5xl text-white mb-3"> Grupo - GL<br />Chamados Condomínio</p>
           <p className="text-ardosia-200 text-base leading-relaxed">
             Chamados de manutenção do seu condomínio, do relato à conclusão.
           </p>
@@ -24,17 +24,17 @@ export function Home() {
           >
             Consultar meu chamado
           </Link>
+          <Link
+          to="/login"
+          className="bg-ardosia-700 hover:bg-ardosia-600 active:bg-ardosia-500 active:scale-[0.98] text-white font-semibold rounded-2xl px-6 py-5 text-center border border-ardosia-600 shadow-md hover:shadow-lg transition-all duration-200 text-lg"
+        >
+          Equipe Interna →
+        </Link>
+          
         </div>
       </div>
 
-      <div className="max-w-lg w-full mx-auto pt-8">
-        <Link
-          to="/login"
-          className="block text-center text-sm text-ardosia-400 hover:text-ardosia-200 transition-colors duration-200"
-        >
-          Sou da equipe interna (síndico, compras, artífice) →
-        </Link>
-      </div>
+      
     </div>
   );
 }

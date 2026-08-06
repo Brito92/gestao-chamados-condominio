@@ -21,7 +21,15 @@ export function LayoutPublico({
       </header>
       <main className="flex-1 px-4 py-6 max-w-lg w-full mx-auto">{children}</main>
       <footer className="text-center text-xs text-ardosia-400 py-4">
-        Gestão de manutenção do condomínio
+        Grupo GL - Gestão Condominial | Desenvolvido por{' '}
+        <a
+          href="https://www.linkedin.com/in/elo-serviços-6aa429428"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-ardosia-600 hover:text-ardosia-800 font-semibold transition-colors duration-200"
+        >
+          ED Serviços, 2026, v0.1.0
+        </a>
       </footer>
     </div>
   );
