@@ -4,21 +4,22 @@ import { LayoutPublico } from '@/components/LayoutPublico';
 import { MultiImageUpload } from '@/components/MultiImageUpload';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import type { TipoProblema, Condominio } from '@/types/database';
 
 export function AbrirChamado() {
   const navigate = useNavigate();
-  const [nome, setNome] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [local, setLocal] = useState('');
-  const [tipo, setTipo] = useState<TipoProblema>('OUTROS');
-  const [descricao, setDescricao] = useState('');
+  const [nome, setNome, limparNome] = usePersistedState('rascunho:publico:nome', '');
+  const [whatsapp, setWhatsapp, limparWhatsapp] = usePersistedState('rascunho:publico:whatsapp', '');
+  const [local, setLocal, limparLocal] = usePersistedState('rascunho:publico:local', '');
+  const [tipo, setTipo, limparTipo] = usePersistedState<TipoProblema>('rascunho:publico:tipo', 'OUTROS');
+  const [descricao, setDescricao, limparDescricao] = usePersistedState('rascunho:publico:descricao', '');
   const [fotos, setFotos] = useState<File[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [condominios, setCondominios] = useState<Condominio[]>([]);
-  const [condominioSelecionado, setCondominioSelecionado] = useState('');
+  const [condominioSelecionado, setCondominioSelecionado, limparCondominio] = usePersistedState('rascunho:publico:condominio', '');
   const [carregandoCondominios, setCarregandoCondominios] = useState(true);
 
   // Carrega lista de condominios ao montar
@@ -107,6 +108,13 @@ export function AbrirChamado() {
         );
       }
 
+      limparNome();
+      limparWhatsapp();
+      limparLocal();
+      limparTipo();
+      limparDescricao();
+      limparCondominio();
+      setFotos([]);
       navigate('/abrir-chamado/sucesso');
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível enviar a solicitação.');

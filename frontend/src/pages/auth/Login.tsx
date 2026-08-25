@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import type { PapelUsuario } from '@/types/database';
 
 type Modo = 'entrar' | 'primeiro_acesso';
@@ -8,8 +9,8 @@ type Modo = 'entrar' | 'primeiro_acesso';
 export function Login() {
   const { sessao, usuario, entrar, cadastrarSenha } = useAuth();
 
-  const [modo, setModo] = useState<Modo>('entrar');
-  const [email, setEmail] = useState('');
+  const [modo, setModo] = usePersistedState<Modo>('rascunho:login:modo', 'entrar');
+  const [email, setEmail] = usePersistedState('rascunho:login:email', '');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [enviando, setEnviando] = useState(false);

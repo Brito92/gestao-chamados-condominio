@@ -7,7 +7,9 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 export function AdminCondominios() {
   const [condominios, setCondominios] = useState<Condominio[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [mostrarForm, setMostrarForm] = useState(false);
+  const [mostrarForm, setMostrarForm] = useState(
+    () => localStorage.getItem('rascunho:admin:condominio:form-aberto') === 'true',
+  );
 
   const [nome, setNome, limparNome] = usePersistedState('rascunho:admin:condominio:nome', '');
   const [endereco, setEndereco, limparEndereco] = usePersistedState('rascunho:admin:condominio:endereco', '');
@@ -30,6 +32,10 @@ export function AdminCondominios() {
   useEffect(() => {
     carregar();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('rascunho:admin:condominio:form-aberto', String(mostrarForm));
+  }, [mostrarForm]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

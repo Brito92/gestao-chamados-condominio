@@ -20,14 +20,14 @@ export function AdminSolicitacaoDetalhe() {
   const { usuario } = useAuth();
   const { chamado, carregando, erro } = useChamadoCompleto({ id });
 
-  const [acao, setAcao] = useState<Acao>(null);
+  const [acao, setAcao, limparAcao] = usePersistedState<Acao>(`rascunho:admin:acao:${id ?? ''}`, null);
   const [motivo, setMotivo, limparMotivo] = usePersistedState(`rascunho:admin:motivo:${id ?? ''}`, '');
   const [observacaoAprovacao, setObservacaoAprovacao, limparObservacao] = usePersistedState(`rascunho:admin:observacao:${id ?? ''}`, '');
   const [anexoRejeicao, setAnexoRejeicao] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [artifices, setArtifices] = useState<Usuario[]>([]);
-  const [artificeId, setArtificeId] = useState('');
+  const [artificeId, setArtificeId, limparArtifice] = usePersistedState(`rascunho:admin:artifice:${id ?? ''}`, '');
 
   useEffect(() => {
     if (!chamado) return;
@@ -68,6 +68,8 @@ export function AdminSolicitacaoDetalhe() {
         .eq('id', chamado.id);
       if (error) throw error;
       limparObservacao();
+      limparArtifice();
+      limparAcao();
       navigate('/interno/admin/solicitacoes');
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível aprovar.');
@@ -106,6 +108,7 @@ export function AdminSolicitacaoDetalhe() {
 
       navigate('/interno/admin/solicitacoes');
       limparMotivo();
+      limparAcao();
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível rejeitar.');
     } finally {

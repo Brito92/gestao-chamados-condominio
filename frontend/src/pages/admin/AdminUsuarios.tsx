@@ -15,7 +15,9 @@ export function AdminUsuarios() {
   const { usuario: usuarioLogado } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [mostrarForm, setMostrarForm] = useState(false);
+  const [mostrarForm, setMostrarForm] = useState(
+    () => localStorage.getItem('rascunho:admin:usuario:form-aberto') === 'true',
+  );
   const [editando, setEditando] = useState<Usuario | null>(null);
   const [condominios, setCondominios] = useState<{id: string; nome: string}[]>([]);
 
@@ -51,6 +53,10 @@ export function AdminUsuarios() {
   useEffect(() => {
     carregar();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('rascunho:admin:usuario:form-aberto', String(mostrarForm));
+  }, [mostrarForm]);
 
   function iniciarEdicao(u: Usuario) {
     // Admin comum não pode editar admin master

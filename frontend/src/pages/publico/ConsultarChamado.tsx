@@ -1,15 +1,18 @@
-import { useState } from 'react';
 import { LayoutPublico } from '@/components/LayoutPublico';
 import { ProgressoChamado } from '@/components/ProgressoChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 
 export function ConsultarChamado() {
-  const [numeroBusca, setNumeroBusca] = useState('');
-  const [numeroConsultado, setNumeroConsultado] = useState<string | undefined>(undefined);
+  const [numeroBusca, setNumeroBusca] = usePersistedState('rascunho:publico:consulta', '');
+  const [numeroConsultado, setNumeroConsultado] = usePersistedState<string | null>(
+    'rascunho:publico:consulta-enviada',
+    null,
+  );
 
-  const { chamado, carregando, erro } = useChamadoCompleto({ numeroChamado: numeroConsultado });
+  const { chamado, carregando, erro } = useChamadoCompleto({ numeroChamado: numeroConsultado ?? undefined });
 
   return (
     <LayoutPublico titulo="Consultar chamado" voltarPara="/">

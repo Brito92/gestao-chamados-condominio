@@ -65,8 +65,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCarregando(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_evento, novaSessao) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (evento, novaSessao) => {
       setSessao(novaSessao);
+
+      // Ao voltar para uma aba/app em segundo plano, o Supabase pode renovar
+      // o token. Isso não muda o usuário e não pode desmontar os formulários,
+      // pois faria o rascunho visual desaparecer.
+      if (evento === 'TOKEN_REFRESHED') return;
+
       setCarregando(true);
       await carregarUsuarioDaSessao(novaSessao);
       setCarregando(false);

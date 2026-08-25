@@ -16,7 +16,9 @@ export function usePersistedState<T>(
 
   useEffect(() => {
     try {
-      localStorage.setItem(chave, JSON.stringify(valor));
+      const serializado = JSON.stringify(valor);
+      if (serializado === undefined) localStorage.removeItem(chave);
+      else localStorage.setItem(chave, serializado);
     } catch {
       // Alguns ambientes podem bloquear o storage; o formulário continua funcionando.
     }

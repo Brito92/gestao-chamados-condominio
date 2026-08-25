@@ -26,7 +26,7 @@ export function ArtificeChamadoDetalhe() {
   const [processando, setProcessando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [observacao, setObservacao, limparObservacao] = usePersistedState(`rascunho:artifice:observacao:${id ?? ''}`, '');
-  const [modoAcao, setModoAcao] = useState<ModoAcao>('normal');
+  const [modoAcao, setModoAcao] = usePersistedState<ModoAcao>(`rascunho:artifice:modo:${id ?? ''}`, 'normal');
   const [motivoNaoExecucao, setMotivoNaoExecucao, limparMotivoNaoExecucao] = usePersistedState(`rascunho:artifice:nao-executado:${id ?? ''}`, '');
 
   async function iniciarExecucao() {
