@@ -12,35 +12,55 @@ create extension if not exists "pgcrypto";
 
 -- Papéis internos do sistema. MORADOR não é um papel de usuário autenticado:
 -- o morador nunca faz login, apenas preenche o formulário público.
-create type papel_usuario as enum ('ADMIN', 'COMPRAS', 'ARTIFICE');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'papel_usuario') THEN
+    CREATE TYPE papel_usuario AS ENUM ('ADMIN', 'COMPRAS', 'ARTIFICE');
+  END IF;
+END$$;
 
 -- Tipo do problema relatado pelo morador.
-create type tipo_problema as enum ('ELETRICA', 'HIDRAULICA', 'REFORMA', 'OUTROS');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_problema') THEN
+    CREATE TYPE tipo_problema AS ENUM ('ELETRICA', 'HIDRAULICA', 'REFORMA', 'OUTROS');
+  END IF;
+END$$;
 
 -- Estados possíveis do ciclo de vida de um chamado (state machine).
 -- A ordem "feliz" do fluxo é:
 --   EM_ANALISE -> EM_COMPRAS -> AGUARDANDO_EXECUCAO -> EM_ANDAMENTO -> FINALIZADO
 -- Estados terminais alternativos: REJEITADO, CANCELADO.
-create type status_chamado as enum (
-  'EM_ANALISE',
-  'REJEITADO',
-  'EM_COMPRAS',
-  'AGUARDANDO_EXECUCAO',
-  'EM_ANDAMENTO',
-  'FINALIZADO',
-  'CANCELADO'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_chamado') THEN
+    CREATE TYPE status_chamado AS ENUM (
+      'EM_ANALISE',
+      'REJEITADO',
+      'EM_COMPRAS',
+      'AGUARDANDO_EXECUCAO',
+      'EM_ANDAMENTO',
+      'FINALIZADO',
+      'CANCELADO'
+    );
+  END IF;
+END$$;
 
 -- Tipos de anexo suportados, usados para diferenciar a etapa do chamado
 -- em que o arquivo foi enviado (mostrado na timeline do chamado).
-create type tipo_anexo as enum (
-  'FOTO_SOLICITACAO',   -- foto enviada pelo morador ao abrir o chamado
-  'ANEXO_REJEICAO',     -- anexo do admin ao rejeitar a solicitação
-  'ORCAMENTO',          -- orçamento anexado pelo setor de compras
-  'COMPROVANTE_COMPRA', -- nota fiscal / comprovante de compra
-  'FOTO_ANTES',         -- foto do artífice antes da execução
-  'FOTO_DEPOIS'         -- foto do artífice após a conclusão
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_anexo') THEN
+    CREATE TYPE tipo_anexo AS ENUM (
+      'FOTO_SOLICITACAO',   -- foto enviada pelo morador ao abrir o chamado
+      'ANEXO_REJEICAO',     -- anexo do admin ao rejeitar a solicitação
+      'ORCAMENTO',          -- orçamento anexado pelo setor de compras
+      'COMPROVANTE_COMPRA', -- nota fiscal / comprovante de compra
+      'FOTO_ANTES',         -- foto do artifice antes da execução
+      'FOTO_DEPOIS'         -- foto do artifice após a conclusão
+    );
+  END IF;
+END$$;
 
 -- -----------------------------------------------------------------------------
 -- TABELA: condominios

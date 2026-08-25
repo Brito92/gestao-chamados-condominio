@@ -66,7 +66,7 @@ export function Login() {
           <img
             src="/logo-gabriel-lima.png"
             alt="Gabriel Lima — Síndico Profissional"
-            className="h-56 w-56 object-contain drop-shadow-[0_0_30px_rgba(231,183,61,0.16)] sm:h-64 sm:w-64 lg:h-72 lg:w-72"
+            className="h-auto w-full max-w-[360px] object-contain drop-shadow-[0_0_30px_rgba(231,183,61,0.16)] sm:max-w-[420px] lg:max-w-[460px]"
           />
           <p className="mt-5 text-xs font-semibold uppercase tracking-[0.35em] text-[#e8bd54]">
             Gestão condominial
