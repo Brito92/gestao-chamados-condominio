@@ -5,10 +5,12 @@ import { BackButton } from '@/components/BackButton';
 import { CampoFoto } from '@/components/CampoFoto';
 import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import { HistoricoChamado } from '@/components/HistoricoChamado';
 import type { Usuario } from '@/types/database';
 
 type Modo = 'menu' | 'com_compra' | 'sem_compra';
@@ -19,16 +21,16 @@ export function ComprasChamadoDetalhe() {
   const { usuario } = useAuth();
   const { chamado, carregando, erro } = useChamadoCompleto({ id });
 
-  const [modo, setModo] = useState<Modo>('menu');
+  const [modo, setModo, limparModo] = usePersistedState<Modo>(`rascunho:compras:modo:${id ?? ''}`, 'menu');
   const [orcamento, setOrcamento] = useState<File | null>(null);
   const [comprovante, setComprovante] = useState<File | null>(null);
-  const [valor, setValor] = useState('');
-  const [justificativa, setJustificativa] = useState('');
+  const [valor, setValor, limparValor] = usePersistedState(`rascunho:compras:valor:${id ?? ''}`, '');
+  const [justificativa, setJustificativa, limparJustificativa] = usePersistedState(`rascunho:compras:justificativa:${id ?? ''}`, '');
   const [processando, setProcessando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [artifices, setArtifices] = useState<Usuario[]>([]);
   const [carregandoArtifices, setCarregandoArtifices] = useState(false);
-  const [artificeId, setArtificeId] = useState<string | null>(null);
+  const [artificeId, setArtificeId, limparArtifice] = usePersistedState<string | null>(`rascunho:compras:artifice:${id ?? ''}`, null);
 
   // Carrega lista de artífices quando modal de decisão abre
   useEffect(() => {
@@ -104,6 +106,10 @@ export function ComprasChamadoDetalhe() {
         .eq('id', chamado.id);
       if (error) throw error;
 
+      limparModo();
+      limparValor();
+      limparJustificativa();
+      limparArtifice();
       navigate('/interno/compras');
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível concluir a compra.');
@@ -139,6 +145,10 @@ export function ComprasChamadoDetalhe() {
         .update(updateData)
         .eq('id', chamado.id);
       if (error) throw error;
+      limparModo();
+      limparValor();
+      limparJustificativa();
+      limparArtifice();
       navigate('/interno/compras');
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível avançar o chamado.');
@@ -150,6 +160,7 @@ export function ComprasChamadoDetalhe() {
   if (carregando) {
     return (
       <LayoutInterno titulo="Chamado">
+        <BackButton />
         <p className="text-sm text-ardosia-400">Carregando...</p>
       </LayoutInterno>
     );
@@ -158,6 +169,7 @@ export function ComprasChamadoDetalhe() {
   if (erro || !chamado) {
     return (
       <LayoutInterno titulo="Chamado">
+        <BackButton />
         <p className="text-sm text-red-600">{erro ?? 'Chamado não encontrado.'}</p>
       </LayoutInterno>
     );
@@ -169,6 +181,11 @@ export function ComprasChamadoDetalhe() {
         <BackButton />
 
         <div className="card flex flex-col gap-3">
+          <div>
+            <p className="text-xs text-ardosia-400">Solicitante</p>
+            <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
+            <p className="text-sm text-ardosia-500">Contato: {chamado.morador_whatsapp}</p>
+          </div>
           <div>
             <p className="font-semibold text-ardosia-800">{chamado.local_problema}</p>
             <p className="text-xs text-ardosia-400">
@@ -192,6 +209,11 @@ export function ComprasChamadoDetalhe() {
               />
             </div>
           ))}
+        </div>
+
+        <div>
+          <p className="text-xs text-ardosia-400 mb-2">Histórico de atualizações</p>
+          <div className="card"><HistoricoChamado historico={chamado.historico} /></div>
         </div>
 
         {modo === 'menu' && (

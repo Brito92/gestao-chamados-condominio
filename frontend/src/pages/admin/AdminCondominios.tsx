@@ -2,14 +2,15 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { LayoutInterno } from '@/components/LayoutInterno';
 import { supabase } from '@/lib/supabaseClient';
 import type { Condominio } from '@/types/database';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 export function AdminCondominios() {
   const [condominios, setCondominios] = useState<Condominio[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
 
-  const [nome, setNome] = useState('');
-  const [endereco, setEndereco] = useState('');
+  const [nome, setNome, limparNome] = usePersistedState('rascunho:admin:condominio:nome', '');
+  const [endereco, setEndereco, limparEndereco] = usePersistedState('rascunho:admin:condominio:endereco', '');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function AdminCondominios() {
     const { data } = await supabase
       .from('condominios')
       .select('*')
+      .eq('ativo', true)
       .order('nome', { ascending: true })
       .returns<Condominio[]>();
     setCondominios(data ?? []);
@@ -48,6 +50,8 @@ export function AdminCondominios() {
 
       setNome('');
       setEndereco('');
+      limparNome();
+      limparEndereco();
       setMostrarForm(false);
       await carregar();
     } catch (err) {
@@ -64,7 +68,15 @@ export function AdminCondominios() {
     setExcluindoId(c.id);
     try {
       const { error } = await supabase.from('condominios').delete().eq('id', c.id);
-      if (error) throw error;
+      if (error) {
+        // Chamados antigos usam FK RESTRICT. Nesse caso, remove da operação
+        // por inativação sem quebrar o histórico já registrado.
+        const { error: erroInativar } = await supabase
+          .from('condominios')
+          .update({ ativo: false })
+          .eq('id', c.id);
+        if (erroInativar) throw error;
+      }
       await carregar();
     } catch {
       setErro(

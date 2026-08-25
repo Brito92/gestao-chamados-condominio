@@ -4,7 +4,9 @@ import { StatusBadge } from './StatusBadge';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 
 function formatarData(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
 }
 
 export function CartaoChamado({ chamado, linkPara }: { chamado: Chamado; linkPara: string }) {
@@ -20,7 +22,7 @@ export function CartaoChamado({ chamado, linkPara }: { chamado: Chamado; linkPar
       <p className="text-sm text-ardosia-500 line-clamp-2">{chamado.descricao}</p>
       <div className="flex items-center justify-between text-xs text-ardosia-400 mt-1">
         <span>{TIPO_PROBLEMA_LABEL[chamado.tipo_problema]}</span>
-        <span>Aberto em {formatarData(chamado.criado_em)}</span>
+        <span>Atualizado em {formatarData(chamado.atualizado_em)}</span>
       </div>
     </Link>
   );

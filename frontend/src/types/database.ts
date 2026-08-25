@@ -108,6 +108,7 @@ export interface ChamadoHistorico {
   observacao: string | null;
   usuario_id: string | null;
   criado_em: string;
+  usuario?: Pick<Usuario, 'id' | 'nome' | 'papel'> | null;
 }
 
 /** Chamado com seus relacionamentos carregados, usado nas telas de detalhe. */

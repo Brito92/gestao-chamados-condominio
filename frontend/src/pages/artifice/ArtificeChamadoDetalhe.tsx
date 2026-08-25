@@ -6,10 +6,12 @@ import { CampoFoto } from '@/components/CampoFoto';
 import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { ProgressoChamado } from '@/components/ProgressoChamado';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import { HistoricoChamado } from '@/components/HistoricoChamado';
 
 type ModoAcao = 'normal' | 'marcar_nao_executado';
 
@@ -23,9 +25,9 @@ export function ArtificeChamadoDetalhe() {
   const [fotoDepois, setFotoDepois] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
-  const [observacao, setObservacao] = useState('');
+  const [observacao, setObservacao, limparObservacao] = usePersistedState(`rascunho:artifice:observacao:${id ?? ''}`, '');
   const [modoAcao, setModoAcao] = useState<ModoAcao>('normal');
-  const [motivoNaoExecucao, setMotivoNaoExecucao] = useState('');
+  const [motivoNaoExecucao, setMotivoNaoExecucao, limparMotivoNaoExecucao] = usePersistedState(`rascunho:artifice:nao-executado:${id ?? ''}`, '');
 
   async function iniciarExecucao() {
     if (!chamado || !usuario) return;
@@ -56,7 +58,7 @@ export function ArtificeChamadoDetalhe() {
         .eq('id', chamado.id);
       if (error) throw error;
       await recarregar();
-      setObservacao('');
+      limparObservacao();
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível salvar a observação.');
     } finally {
@@ -82,6 +84,7 @@ export function ArtificeChamadoDetalhe() {
         })
         .eq('id', chamado.id);
       if (error) throw error;
+      limparMotivoNaoExecucao();
       navigate('/interno/artifice');
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível marcar como não executado.');
@@ -120,6 +123,7 @@ export function ArtificeChamadoDetalhe() {
         .eq('id', chamado.id);
       if (error) throw error;
 
+      limparObservacao();
       navigate('/interno/artifice');
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível finalizar o chamado.');
@@ -131,6 +135,7 @@ export function ArtificeChamadoDetalhe() {
   if (carregando) {
     return (
       <LayoutInterno titulo="Chamado">
+        <BackButton />
         <p className="text-sm text-ardosia-400">Carregando...</p>
       </LayoutInterno>
     );
@@ -139,6 +144,7 @@ export function ArtificeChamadoDetalhe() {
   if (erro || !chamado) {
     return (
       <LayoutInterno titulo="Chamado">
+        <BackButton />
         <p className="text-sm text-red-600">{erro ?? 'Chamado não encontrado.'}</p>
       </LayoutInterno>
     );
@@ -154,6 +160,11 @@ export function ArtificeChamadoDetalhe() {
         </div>
 
         <div className="card flex flex-col gap-3">
+          <div>
+            <p className="text-xs text-ardosia-400">Solicitante</p>
+            <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
+            <p className="text-sm text-ardosia-500">Contato: {chamado.morador_whatsapp}</p>
+          </div>
           <div>
             <p className="font-semibold text-ardosia-800">{chamado.local_problema}</p>
             <p className="text-xs text-ardosia-400">
@@ -183,19 +194,11 @@ export function ArtificeChamadoDetalhe() {
               />
             </div>
           ))}
-          {chamado.anexos.filter(a => a.tipo === 'ORCAMENTO' || a.tipo === 'COMPROVANTE_COMPRA').map((anexo) => (
-            <div key={anexo.id}>
-              <p className="text-xs text-ardosia-400 mb-2">
-                {anexo.tipo === 'ORCAMENTO' ? 'Orçamento' : 'Comprovante de compra'}
-                {anexo.valor && ` - R$ ${anexo.valor}`}
-              </p>
-              <VisualizadorImagem
-                url={anexo.url}
-                alt={anexo.tipo === 'ORCAMENTO' ? 'Orçamento' : 'Comprovante de compra'}
-                className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full"
-              />
-            </div>
-          ))}
+        </div>
+
+        <div>
+          <p className="text-xs text-ardosia-400 mb-2">Histórico de atualizações</p>
+          <div className="card"><HistoricoChamado historico={chamado.historico} /></div>
         </div>
 
         {chamado.status === 'AGUARDANDO_EXECUCAO' && (

@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LayoutInterno } from '@/components/LayoutInterno';
 import { BackButton } from '@/components/BackButton';
 import { CampoFoto } from '@/components/CampoFoto';
 import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import type { Usuario } from '@/types/database';
 
 type Acao = 'aprovar' | 'rejeitar' | null;
 
@@ -19,11 +21,26 @@ export function AdminSolicitacaoDetalhe() {
   const { chamado, carregando, erro } = useChamadoCompleto({ id });
 
   const [acao, setAcao] = useState<Acao>(null);
-  const [motivo, setMotivo] = useState('');
-  const [observacaoAprovacao, setObservacaoAprovacao] = useState('');
+  const [motivo, setMotivo, limparMotivo] = usePersistedState(`rascunho:admin:motivo:${id ?? ''}`, '');
+  const [observacaoAprovacao, setObservacaoAprovacao, limparObservacao] = usePersistedState(`rascunho:admin:observacao:${id ?? ''}`, '');
   const [anexoRejeicao, setAnexoRejeicao] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
+  const [artifices, setArtifices] = useState<Usuario[]>([]);
+  const [artificeId, setArtificeId] = useState('');
+
+  useEffect(() => {
+    if (!chamado) return;
+    supabase
+      .from('usuarios')
+      .select('*')
+      .eq('papel', 'ARTIFICE')
+      .eq('ativo', true)
+      .eq('condominio_id', chamado.condominio_id)
+      .order('nome')
+      .returns<Usuario[]>()
+      .then(({ data }) => setArtifices(data ?? []));
+  }, [chamado?.condominio_id]);
 
   async function aprovar() {
     if (!chamado) return;
@@ -39,12 +56,18 @@ export function AdminSolicitacaoDetalhe() {
       if (observacaoAprovacao.trim()) {
         updateData.observacao_aprovacao = observacaoAprovacao.trim();
       }
+      if (artificeId) {
+        updateData.artifice_id = artificeId;
+        updateData.artifice_atribuido_por = usuario?.id ?? null;
+        updateData.artifice_atribuido_em = new Date().toISOString();
+      }
       
       const { error } = await supabase
         .from('chamados')
         .update(updateData)
         .eq('id', chamado.id);
       if (error) throw error;
+      limparObservacao();
       navigate('/interno/admin/solicitacoes');
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível aprovar.');
@@ -82,6 +105,7 @@ export function AdminSolicitacaoDetalhe() {
       }
 
       navigate('/interno/admin/solicitacoes');
+      limparMotivo();
     } catch (err) {
       setErroAcao(err instanceof Error ? err.message : 'Não foi possível rejeitar.');
     } finally {
@@ -92,6 +116,7 @@ export function AdminSolicitacaoDetalhe() {
   if (carregando) {
     return (
       <LayoutInterno titulo="Solicitação">
+        <BackButton />
         <p className="text-sm text-ardosia-400">Carregando...</p>
       </LayoutInterno>
     );
@@ -100,6 +125,7 @@ export function AdminSolicitacaoDetalhe() {
   if (erro || !chamado) {
     return (
       <LayoutInterno titulo="Solicitação">
+        <BackButton />
         <p className="text-sm text-red-600">{erro ?? 'Solicitação não encontrada.'}</p>
       </LayoutInterno>
     );
@@ -173,6 +199,17 @@ export function AdminSolicitacaoDetalhe() {
                 value={observacaoAprovacao}
                 onChange={(e) => setObservacaoAprovacao(e.target.value)}
               />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-medium text-ardosia-700 mb-1.5">
+                Atribuir artífice (opcional)
+              </span>
+              <select className="input" value={artificeId} onChange={(e) => setArtificeId(e.target.value)}>
+                <option value="">-- Selecionar depois --</option>
+                {artifices.map((artifice) => (
+                  <option key={artifice.id} value={artifice.id}>{artifice.nome}</option>
+                ))}
+              </select>
             </label>
             {erroAcao && <p className="text-sm text-red-600">{erroAcao}</p>}
             <div className="flex gap-2">

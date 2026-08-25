@@ -6,6 +6,7 @@ import { ProgressoChamado } from '@/components/ProgressoChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
 import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import type { Usuario } from '@/types/database';
@@ -14,10 +15,15 @@ const NAO_CANCELAVEL = new Set(['FINALIZADO', 'CANCELADO', 'REJEITADO']);
 
 export function AdminChamadoDetalhe() {
   const { id } = useParams<{ id: string }>();
+  const { usuario } = useAuth();
   const { chamado, carregando, erro, recarregar } = useChamadoCompleto({ id });
   const [cancelando, setCancelando] = useState(false);
   const [usuarioAtribuidor, setUsuarioAtribuidor] = useState<Usuario | null>(null);
   const [carregandoAtribuidor, setCarregandoAtribuidor] = useState(false);
+  const [artifices, setArtifices] = useState<Usuario[]>([]);
+  const [artificeSelecionado, setArtificeSelecionado] = useState('');
+  const [salvandoArtifice, setSalvandoArtifice] = useState(false);
+  const [erroArtifice, setErroArtifice] = useState<string | null>(null);
 
   // Carrega informação de quem atribuiu o artífice
   useEffect(() => {
@@ -27,6 +33,34 @@ export function AdminChamadoDetalhe() {
       setUsuarioAtribuidor(null);
     }
   }, [chamado?.artifice_atribuido_por]);
+
+  useEffect(() => {
+    if (!chamado) return;
+    setArtificeSelecionado(chamado.artifice_id ?? '');
+    supabase
+      .from('usuarios')
+      .select('*')
+      .eq('papel', 'ARTIFICE')
+      .eq('ativo', true)
+      .eq('condominio_id', chamado.condominio_id)
+      .order('nome')
+      .returns<Usuario[]>()
+      .then(({ data }) => setArtifices(data ?? []));
+  }, [chamado?.id, chamado?.artifice_id, chamado?.condominio_id]);
+
+  async function salvarArtifice() {
+    if (!chamado) return;
+    setSalvandoArtifice(true);
+    setErroArtifice(null);
+    const { error } = await supabase.from('chamados').update({
+      artifice_id: artificeSelecionado || null,
+      artifice_atribuido_por: artificeSelecionado ? usuario?.id ?? null : null,
+      artifice_atribuido_em: artificeSelecionado ? new Date().toISOString() : null,
+    }).eq('id', chamado.id);
+    if (error) setErroArtifice(error.message);
+    else await recarregar();
+    setSalvandoArtifice(false);
+  }
 
   async function carregarUsuarioAtribuidor() {
     if (!chamado?.artifice_atribuido_por) return;
@@ -58,6 +92,7 @@ export function AdminChamadoDetalhe() {
   if (carregando) {
     return (
       <LayoutInterno titulo="Chamado">
+        <BackButton />
         <p className="text-sm text-ardosia-400">Carregando...</p>
       </LayoutInterno>
     );
@@ -66,6 +101,7 @@ export function AdminChamadoDetalhe() {
   if (erro || !chamado) {
     return (
       <LayoutInterno titulo="Chamado">
+        <BackButton />
         <p className="text-sm text-red-600">{erro ?? 'Chamado não encontrado.'}</p>
       </LayoutInterno>
     );
@@ -134,11 +170,29 @@ export function AdminChamadoDetalhe() {
           )}
         </div>
 
+        {!NAO_CANCELAVEL.has(chamado.status) && (
+          <div className="card flex flex-col gap-2">
+            <p className="text-xs text-ardosia-400">Responsável pela execução</p>
+            <select className="input" value={artificeSelecionado} onChange={(e) => setArtificeSelecionado(e.target.value)}>
+              <option value="">Sem artífice atribuído</option>
+              {artifices.map((artifice) => (
+                <option key={artifice.id} value={artifice.id}>{artifice.nome}</option>
+              ))}
+            </select>
+            {erroArtifice && <p className="text-sm text-red-600">{erroArtifice}</p>}
+            <button className="btn-secundario" onClick={salvarArtifice} disabled={salvandoArtifice}>
+              {salvandoArtifice ? 'Salvando...' : 'Salvar responsável'}
+            </button>
+          </div>
+        )}
+
         {chamado.artifice_id && (
           <div className="card flex flex-col gap-2">
             <div>
               <p className="text-xs text-ardosia-400">Artífice atribuído</p>
-              <p className="text-sm font-medium text-ardosia-700">{chamado.artifice_id}</p>
+              <p className="text-sm font-medium text-ardosia-700">
+                {artifices.find((item) => item.id === chamado.artifice_id)?.nome ?? chamado.artifice_id}
+              </p>
             </div>
             {!carregandoAtribuidor && usuarioAtribuidor && (
               <div>

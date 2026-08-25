@@ -24,6 +24,9 @@ export function HistoricoChamado({ historico }: { historico: ChamadoHistorico[] 
             {STATUS_META[item.status_novo].label}
           </p>
           <p className="text-xs text-ardosia-400">{formatarData(item.criado_em)}</p>
+          {item.usuario && (
+            <p className="text-xs text-ardosia-500 mt-0.5">Responsável: {item.usuario.nome}</p>
+          )}
           {item.observacao && (
             <p className="text-sm text-ardosia-600 mt-1 bg-ardosia-50 rounded-lg p-2 border border-ardosia-100">
               {item.observacao}

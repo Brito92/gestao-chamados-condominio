@@ -13,18 +13,23 @@ const TODOS_STATUS = Object.keys(STATUS_META).filter(
 export function AdminChamados() {
   const [filtro, setFiltro] = useState<StatusChamado[]>([...TODOS_STATUS]);
   const [busca, setBusca] = useState('');
+  const [dataInicial, setDataInicial] = useState('');
+  const [dataFinal, setDataFinal] = useState('');
   const { chamados, carregando } = useChamadosPorStatus(filtro);
 
   // Filtra por busca (morador_nome ou numero_chamado)
   const chamadosFiltrados = useMemo(() => {
-    if (!busca.trim()) return chamados;
+    const inicio = dataInicial ? new Date(`${dataInicial}T00:00:00`).getTime() : null;
+    const fim = dataFinal ? new Date(`${dataFinal}T23:59:59.999`).getTime() : null;
     const termoBusca = busca.toLowerCase();
     return chamados.filter(
       (c) =>
-        c.morador_nome.toLowerCase().includes(termoBusca) ||
-        (c.numero_chamado?.toLowerCase().includes(termoBusca) ?? false)
+        (!termoBusca || c.morador_nome.toLowerCase().includes(termoBusca) ||
+          (c.numero_chamado?.toLowerCase().includes(termoBusca) ?? false)) &&
+        (inicio === null || new Date(c.atualizado_em).getTime() >= inicio) &&
+        (fim === null || new Date(c.atualizado_em).getTime() <= fim)
     );
-  }, [chamados, busca]);
+  }, [chamados, busca, dataInicial, dataFinal]);
 
   function alternarFiltro(status: StatusChamado) {
     setFiltro((atual) => {
@@ -47,6 +52,17 @@ export function AdminChamados() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
+
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs text-ardosia-500">
+            De
+            <input type="date" className="input mt-1" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} />
+          </label>
+          <label className="text-xs text-ardosia-500">
+            Até
+            <input type="date" className="input mt-1" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} />
+          </label>
+        </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
           <button

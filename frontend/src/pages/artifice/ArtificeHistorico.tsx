@@ -92,7 +92,7 @@ export function ArtificeHistorico() {
                 {formatarData(chamado.finalizado_em)}
               </p>
 
-              {chamado.executado ? (
+              {chamado.executado !== false ? (
                 <span className="inline-block rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">
                   Executado ✓
                 </span>
@@ -103,7 +103,7 @@ export function ArtificeHistorico() {
               )}
             </div>
 
-            {!chamado.executado && chamado.motivo_nao_execucao && (
+            {chamado.executado === false && chamado.motivo_nao_execucao && (
               <p className="text-xs text-red-600 italic">
                 Motivo: {chamado.motivo_nao_execucao}
               </p>

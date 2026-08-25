@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { LayoutInterno } from '@/components/LayoutInterno';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import type { PapelUsuario, Usuario } from '@/types/database';
 
 const LABEL_PAPEL: Record<PapelUsuario, string> = {
@@ -18,10 +19,10 @@ export function AdminUsuarios() {
   const [editando, setEditando] = useState<Usuario | null>(null);
   const [condominios, setCondominios] = useState<{id: string; nome: string}[]>([]);
 
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [papel, setPapel] = useState<PapelUsuario>('ARTIFICE');
-  const [condominioId, setCondominioId] = useState<string>('');
+  const [nome, setNome, limparNome] = usePersistedState('rascunho:admin:usuario:nome', '');
+  const [email, setEmail, limparEmail] = usePersistedState('rascunho:admin:usuario:email', '');
+  const [papel, setPapel, limparPapel] = usePersistedState<PapelUsuario>('rascunho:admin:usuario:papel', 'ARTIFICE');
+  const [condominioId, setCondominioId, limparCondominio] = usePersistedState<string>('rascunho:admin:usuario:condominio', '');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -53,8 +54,8 @@ export function AdminUsuarios() {
 
   function iniciarEdicao(u: Usuario) {
     // Admin comum não pode editar admin master
-    if (u.papel === 'ADMIN' && u.admin_master && !isAdminMaster) {
-      setErro('Somente o admin master pode editar administradores master.');
+    if (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster) {
+      setErro('Admin comum não pode editar dados de outros administradores.');
       return;
     }
     
@@ -72,6 +73,10 @@ export function AdminUsuarios() {
     setEmail('');
     setPapel('ARTIFICE');
     setCondominioId('');
+    limparNome();
+    limparEmail();
+    limparPapel();
+    limparCondominio();
     setMostrarForm(false);
     setErro(null);
   }
@@ -116,7 +121,7 @@ export function AdminUsuarios() {
         const { error } = await supabase.from('usuarios').insert({
           ...userData,
           criado_por: usuarioLogado?.id ?? null,
-          admin_master: papel === 'ADMIN' ? false : null,
+          ...(papel === 'ADMIN' ? { admin_master: false } : {}),
         });
         if (error) throw error;
       }
@@ -132,8 +137,8 @@ export function AdminUsuarios() {
 
   async function alternarAtivo(u: Usuario) {
     // Admin comum não pode desativar outros admins
-    if (u.papel === 'ADMIN' && !isAdminMaster) {
-      setErro('Somente o admin master pode desativar administradores.');
+    if (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster) {
+      setErro('Admin comum não pode desativar outros administradores.');
       return;
     }
     
@@ -240,15 +245,15 @@ export function AdminUsuarios() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => iniciarEdicao(u)}
-                    disabled={u.papel === 'ADMIN' && u.admin_master && !isAdminMaster}
+                    disabled={u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster}
                     className={`text-xs font-semibold rounded-full px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 ${
-                      (u.papel === 'ADMIN' && u.admin_master && !isAdminMaster)
+                      (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster)
                         ? 'opacity-50 cursor-not-allowed'
                         : ''
                     }`}
                     title={
-                      (u.papel === 'ADMIN' && u.admin_master && !isAdminMaster)
-                        ? 'Somente admin master pode editar administradores master'
+                      (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster)
+                        ? 'Admin comum não pode editar outros administradores'
                         : 'Editar usuário'
                     }
                   >
@@ -257,7 +262,7 @@ export function AdminUsuarios() {
                   <button
                     onClick={() => alternarAtivo(u)}
                     disabled={
-                      (u.papel === 'ADMIN' && !isAdminMaster) ||
+                      (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster) ||
                       u.id === usuarioLogado?.id
                     }
                     className={`text-xs font-semibold rounded-full px-3 py-1 ${
@@ -265,13 +270,13 @@ export function AdminUsuarios() {
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-ardosia-100 text-ardosia-500'
                     } ${
-                      (u.papel === 'ADMIN' && !isAdminMaster) ||
+                      (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster) ||
                       u.id === usuarioLogado?.id
                         ? 'opacity-50 cursor-not-allowed'
                         : ''
                     }`}
                     title={
-                      (u.papel === 'ADMIN' && !isAdminMaster)
+                      (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster)
                         ? 'Somente admin master pode desativar administradores'
                         : u.id === usuarioLogado?.id
                         ? 'Não pode desativar seu próprio usuário'

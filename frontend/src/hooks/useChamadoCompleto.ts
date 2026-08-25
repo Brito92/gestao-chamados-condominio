@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import type { Chamado, ChamadoAnexo, ChamadoCompleto, ChamadoHistorico } from '@/types/database';
+import type { Chamado, ChamadoAnexo, ChamadoCompleto, ChamadoHistorico, Usuario } from '@/types/database';
 
 interface UseChamadoCompletoResult {
   chamado: ChamadoCompleto | null;
@@ -60,10 +60,19 @@ export function useChamadoCompleto(params: {
         .returns<ChamadoHistorico[]>(),
     ]);
 
+    const idsUsuarios = [...new Set((historico ?? []).map((item) => item.usuario_id).filter(Boolean))] as string[];
+    const { data: usuarios } = idsUsuarios.length
+      ? await supabase.from('usuarios').select('id, nome, papel').in('id', idsUsuarios).returns<Pick<Usuario, 'id' | 'nome' | 'papel'>[]>()
+      : { data: [] as Pick<Usuario, 'id' | 'nome' | 'papel'>[] };
+    const usuariosPorId = new Map((usuarios ?? []).map((item) => [item.id, item]));
+
     setChamado({
       ...chamadoData,
       anexos: anexos ?? [],
-      historico: historico ?? [],
+      historico: (historico ?? []).map((item) => ({
+        ...item,
+        usuario: item.usuario_id ? usuariosPorId.get(item.usuario_id) ?? null : null,
+      })),
     });
     setCarregando(false);
   }, [id, numeroChamado]);
