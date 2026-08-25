@@ -2,39 +2,45 @@ import { Link } from 'react-router-dom';
 
 export function Home() {
   return (
-    <div className="min-h-screen bg-ardosia-800 flex flex-col justify-between px-6 py-10">
-      <div className="max-w-lg w-full mx-auto flex-1 flex flex-col justify-center gap-12">
-        <div className="text-center">
-          <p className="font-display font-extrabold text-5xl text-white mb-3"> Grupo - GL<br />Chamados Condomínio</p>
-          <p className="text-ardosia-200 text-base leading-relaxed">
+    <div className="min-h-screen bg-[#101010] px-5 py-8 text-white sm:px-8 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-lg flex-col justify-between">
+        <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+          <img
+            src="/logo-gabriel-lima.png"
+            alt="Gabriel Lima - Síndico Profissional"
+            className="h-auto w-full max-w-[360px] object-contain drop-shadow-[0_0_30px_rgba(231,183,61,0.16)]"
+          />
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.3em] text-[#e8bd54]">
+            Gestão condominial
+          </p>
+          <p className="mt-3 max-w-sm text-sm leading-6 text-white/60">
             Chamados de manutenção do seu condomínio, do relato à conclusão.
           </p>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 pb-4">
           <Link
             to="/abrir-chamado"
-            className="bg-ambar-500 hover:bg-ambar-600 active:bg-ambar-700 active:scale-[0.98] text-ardosia-950 font-semibold rounded-2xl px-6 py-5 text-center shadow-lg hover:shadow-xl transition-all duration-200 text-lg"
+            className="rounded-2xl bg-[#e8bd54] px-6 py-4 text-center text-lg font-bold text-[#171717] shadow-lg shadow-[#d7aa36]/10 transition hover:bg-[#f4d477] active:scale-[0.98]"
           >
             Relatar um problema
           </Link>
           <Link
             to="/consultar"
-            className="bg-ardosia-700 hover:bg-ardosia-600 active:bg-ardosia-500 active:scale-[0.98] text-white font-semibold rounded-2xl px-6 py-5 text-center border border-ardosia-600 shadow-md hover:shadow-lg transition-all duration-200 text-lg"
+            className="rounded-2xl border border-white/10 bg-[#202020] px-6 py-4 text-center text-lg font-semibold text-white transition hover:border-[#e8bd54]/40 hover:text-[#f7d36d] active:scale-[0.98]"
           >
             Consultar meu chamado
           </Link>
           <Link
-          to="/login"
-          className="bg-ardosia-700 hover:bg-ardosia-600 active:bg-ardosia-500 active:scale-[0.98] text-white font-semibold rounded-2xl px-6 py-5 text-center border border-ardosia-600 shadow-md hover:shadow-lg transition-all duration-200 text-lg"
-        >
-          Equipe Interna →
-        </Link>
-          
+            to="/login"
+            className="rounded-2xl border border-[#d7aa36]/25 bg-[#191919] px-6 py-4 text-center text-lg font-semibold text-[#e8bd54] transition hover:border-[#e8bd54]/60 hover:bg-[#2a2415] active:scale-[0.98]"
+          >
+            Equipe interna →
+          </Link>
         </div>
-      </div>
 
-      
+        <p className="pt-5 text-center text-xs text-white/30">Gabriel Lima · Síndico Profissional</p>
+      </div>
     </div>
   );
 }

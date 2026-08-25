@@ -8,7 +8,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply text-ardosia-900;
+    @apply text-ardosia-800 bg-[#101010];
     /* Adiciona padding seguro para barras do sistema */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
@@ -19,13 +19,13 @@
 
 @layer components {
   .input {
-    @apply w-full rounded-xl border border-ardosia-200 bg-white px-4 py-3.5 text-sm text-ardosia-800
-      placeholder:text-ardosia-300 focus:outline-none focus:ring-2 focus:ring-ambar-400 focus:border-ambar-400
+    @apply w-full rounded-xl border border-ardosia-200 bg-[#121212] px-4 py-3.5 text-sm text-ardosia-800
+      placeholder:text-ardosia-400 focus:outline-none focus:ring-2 focus:ring-ambar-400 focus:border-ambar-400
       transition-all duration-200;
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-card border border-ardosia-100 p-4
+    @apply bg-[#202020] rounded-2xl shadow-card border border-ardosia-200/70 p-4
       transition-shadow duration-200 hover:shadow-md;
   }
 
@@ -36,12 +36,50 @@
   }
 
   .btn-secundario {
-    @apply bg-white border border-ardosia-200 hover:bg-ardosia-100 active:bg-ardosia-200 active:scale-[0.98] 
+    @apply bg-[#202020] border border-ardosia-200 hover:bg-ardosia-100 active:bg-ardosia-200 active:scale-[0.98]
       text-ardosia-700 font-semibold rounded-xl px-4 py-3.5 text-center transition-all duration-200;
   }
 
   .btn-perigo {
-    @apply bg-red-50 border border-red-200 hover:bg-red-100 active:bg-red-200 active:scale-[0.98] 
-      text-red-700 font-semibold rounded-xl px-4 py-3.5 text-center transition-all duration-200;
+    @apply bg-red-950/40 border border-red-400/30 hover:bg-red-950/60 active:bg-red-950/80 active:scale-[0.98]
+      text-red-200 font-semibold rounded-xl px-4 py-3.5 text-center transition-all duration-200;
   }
+}
+
+/* Ajustes dos utilitários antigos para o tema escuro da marca. */
+@layer utilities {
+  .bg-white { background-color: #202020 !important; }
+  .bg-white\/90 { background-color: rgba(32, 32, 32, .9) !important; }
+  .bg-ardosia-800 { background-color: #111111 !important; }
+  .bg-ardosia-700 { background-color: #191919 !important; }
+  .bg-ardosia-600 { background-color: #292929 !important; }
+  .text-ardosia-200 { color: #777777 !important; }
+  .text-ardosia-300 { color: #909090 !important; }
+  .text-ardosia-400 { color: #9e9e9e !important; }
+  .text-ardosia-500 { color: #b2b2b2 !important; }
+  .text-ardosia-600 { color: #c8c8c8 !important; }
+  .text-ardosia-700 { color: #dedede !important; }
+  .text-ardosia-800 { color: #f0f0f0 !important; }
+  .text-ardosia-900 { color: #fafafa !important; }
+  .text-ardosia-950 { color: #111111 !important; }
+  .text-blue-600 { color: #8fc5ff !important; }
+  .text-blue-700 { color: #a8d1ff !important; }
+  .text-blue-800 { color: #b9d9ff !important; }
+  .text-emerald-600 { color: #82e6b2 !important; }
+  .text-emerald-700 { color: #9bf0c5 !important; }
+  .text-emerald-800 { color: #baf7d6 !important; }
+  .text-orange-600 { color: #ffc27d !important; }
+  .text-orange-800 { color: #ffd7a8 !important; }
+  .text-red-600 { color: #ffaaaa !important; }
+  .text-red-700 { color: #ffbcbc !important; }
+  .text-red-800 { color: #ffd0d0 !important; }
+  .text-amber-700 { color: #f4d477 !important; }
+  .bg-blue-50 { background-color: rgba(35, 104, 170, .18) !important; }
+  .bg-blue-100 { background-color: rgba(35, 104, 170, .28) !important; }
+  .bg-emerald-50 { background-color: rgba(22, 125, 78, .18) !important; }
+  .bg-orange-50 { background-color: rgba(176, 93, 21, .2) !important; }
+  .bg-red-50 { background-color: rgba(150, 35, 35, .2) !important; }
+  .bg-emerald-100 { background-color: rgba(22, 125, 78, .28) !important; }
+  .bg-red-100 { background-color: rgba(150, 35, 35, .28) !important; }
+  .bg-amber-100 { background-color: rgba(173, 125, 25, .28) !important; }
 }

@@ -38,46 +38,43 @@ const LABEL_PAPEL: Record<PapelUsuario, string> = {
 export function LayoutInterno({ children, titulo }: { children: ReactNode; titulo: string }) {
   const { usuario, sair } = useAuth();
   const [menuAberto, setMenuAberto] = useState(false);
-
   const itensNav = usuario ? NAV_POR_PAPEL[usuario.papel] : [];
 
   return (
-    // Removi o 'pb-20' daqui, pois não temos mais o menu fixo no rodapé ocupando espaço
-    <div className="min-h-screen bg-ardosia-50 flex flex-col">
-      <header className="bg-ardosia-800 text-white px-4 pt-4 pb-3 sticky top-0 z-20 shadow-lg">
-        <div className="flex items-center justify-between gap-3">
-          
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            {/* Botão Hambúrguer (Três tracinhos) */}
+    <div className="min-h-screen bg-[#101010] text-white flex flex-col">
+      <header className="sticky top-0 z-20 border-b border-[#d7aa36]/25 bg-[#111111]/95 px-4 pb-3 pt-4 shadow-[0_8px_30px_rgba(0,0,0,.2)] backdrop-blur sm:px-6">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             {usuario && (
               <button
+                type="button"
                 onClick={() => setMenuAberto(true)}
-                className="p-1 -ml-1 text-white/90 hover:text-white focus:outline-none rounded"
+                className="-ml-1 rounded-lg p-1 text-[#e8bd54] hover:bg-[#e8bd54]/10 focus:outline-none"
                 aria-label="Abrir menu principal"
               >
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
             )}
-            
-            <div className="flex-1 min-w-0">
-              <p className="font-display font-extrabold text-lg leading-tight truncate">Chamando Condomínio</p>
-              <p className="text-xs text-white/70 leading-tight truncate">{titulo}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-lg font-extrabold leading-tight text-[#f7d36d]">
+                Gabriel Lima
+              </p>
+              <p className="truncate text-xs leading-tight text-white/55">{titulo}</p>
             </div>
           </div>
 
           {usuario && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="text-right min-w-0 hidden sm:block">
-                <p className="text-xs font-semibold leading-tight truncate">{usuario.nome}</p>
-                <p className="text-[10px] text-white/60 leading-tight">
-                  {LABEL_PAPEL[usuario.papel]}
-                </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="hidden min-w-0 text-right sm:block">
+                <p className="truncate text-xs font-semibold leading-tight text-white">{usuario.nome}</p>
+                <p className="text-[10px] leading-tight text-[#e8bd54]">{LABEL_PAPEL[usuario.papel]}</p>
               </div>
               <button
+                type="button"
                 onClick={() => sair()}
-                className="bg-ardosia-700 hover:bg-ardosia-600 active:bg-ardosia-500 text-white text-xs font-medium rounded-lg px-3 py-2.5 border border-ardosia-600 transition-colors min-w-[60px]"
+                className="min-w-[60px] rounded-lg border border-white/10 bg-[#202020] px-3 py-2.5 text-xs font-medium text-white transition-colors hover:border-[#e8bd54]/40 hover:text-[#f7d36d]"
                 aria-label="Sair"
               >
                 Sair
@@ -87,60 +84,59 @@ export function LayoutInterno({ children, titulo }: { children: ReactNode; titul
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-6 max-w-2xl w-full mx-auto">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6">{children}</main>
 
-      {/* Overlay escuro que fica atrás do menu quando ele está aberto */}
       {menuAberto && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 transition-opacity backdrop-blur-sm"
-          onClick={() => setMenuAberto(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
       )}
 
-      {/* Menu Lateral Deslizante */}
-      <nav 
-        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+      <nav
+        className={`fixed left-0 top-0 z-50 flex h-full w-[min(82vw,320px)] transform flex-col border-r border-[#d7aa36]/25 bg-[#171717] shadow-2xl transition-transform duration-300 ease-in-out ${
           menuAberto ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-4 border-b border-ardosia-100 flex items-center justify-between bg-ardosia-50">
-          <span className="font-display font-bold text-ardosia-800">Menu</span>
-          <button 
-            onClick={() => setMenuAberto(false)}
-            className="p-2 text-ardosia-400 hover:text-ardosia-700 hover:bg-ardosia-100 rounded-lg transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        <div className="border-b border-white/10 bg-[#111111] p-5">
+          <div className="flex items-center justify-between gap-3">
+            <img src="/logo-gabriel-lima.png" alt="Gabriel Lima" className="h-auto w-40 max-w-[65%] object-contain" />
+            <button
+              type="button"
+              onClick={() => setMenuAberto(false)}
+              className="rounded-lg p-2 text-white/50 transition hover:bg-white/10 hover:text-[#f7d36d]"
+              aria-label="Fechar menu"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#d7aa36]">Área da equipe</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-2 flex flex-col">
+        <div className="flex flex-1 flex-col gap-1 overflow-y-auto py-3">
           {itensNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end
-              onClick={() => setMenuAberto(false)} // Fecha o menu automaticamente ao clicar em um link
+              onClick={() => setMenuAberto(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 py-3.5 px-5 text-sm font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-ambar-50 text-ambar-700 border-r-4 border-ambar-600' 
-                    : 'text-ardosia-600 hover:bg-ardosia-50 hover:text-ardosia-900'
+                `mx-2 flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-all ${
+                  isActive
+                    ? 'border border-[#d7aa36]/30 bg-[#3b3018] text-[#f7d36d]'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white'
                 }`
               }
             >
-              <span className="text-xl w-6 text-center">{item.icone}</span>
+              <span className="w-6 text-center text-xl">{item.icone}</span>
               <span className="truncate">{item.label}</span>
             </NavLink>
           ))}
         </div>
-        
-        {/* Mostra os dados do usuário no rodapé do menu em telas menores */}
+
         {usuario && (
-          <div className="p-4 border-t border-ardosia-100 bg-ardosia-50 sm:hidden">
-            <p className="text-sm font-semibold text-ardosia-800 truncate">{usuario.nome}</p>
-            <p className="text-xs text-ardosia-500 truncate">{LABEL_PAPEL[usuario.papel]}</p>
+          <div className="border-t border-white/10 bg-[#111111] p-4 sm:hidden">
+            <p className="truncate text-sm font-semibold text-white">{usuario.nome}</p>
+            <p className="truncate text-xs text-[#e8bd54]">{LABEL_PAPEL[usuario.papel]}</p>
           </div>
         )}
       </nav>

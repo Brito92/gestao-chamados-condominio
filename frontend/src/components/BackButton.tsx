@@ -12,7 +12,7 @@ export function BackButton({ to }: { to?: string }) {
     <button
       type="button"
       onClick={handleClick}
-      className="self-start text-ardosia-700 hover:text-ardosia-950 active:text-ardosia-500 font-semibold text-base leading-none px-3 py-2 -ml-3 rounded-lg transition-colors duration-200"
+      className="self-start text-ardosia-700 hover:text-[#f7d36d] active:text-ardosia-500 font-semibold text-base leading-none px-3 py-2 -ml-3 rounded-lg transition-colors duration-200"
       aria-label="Voltar"
     >
       ← Voltar
