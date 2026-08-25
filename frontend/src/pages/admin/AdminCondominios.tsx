@@ -62,25 +62,18 @@ export function AdminCondominios() {
   }
 
   async function excluir(c: Condominio) {
-    if (!confirm(`Excluir o condomínio "${c.nome}"? Essa ação não pode ser desfeita.`)) return;
+    if (!confirm(`Inativar o condomínio "${c.nome}"? Você poderá reativá-lo depois.`)) return;
 
     setErro(null);
     setExcluindoId(c.id);
     try {
-      const { error } = await supabase.from('condominios').delete().eq('id', c.id);
-      if (error) {
-        // Chamados antigos usam FK RESTRICT. Nesse caso, remove da operação
-        // por inativação sem quebrar o histórico já registrado.
-        const { error: erroInativar } = await supabase
-          .from('condominios')
-          .update({ ativo: false })
-          .eq('id', c.id);
-        if (erroInativar) throw error;
-      }
+      // Inativação explícita: marca o condomínio como inativo em vez de deletar.
+      const { error } = await supabase.from('condominios').update({ ativo: false }).eq('id', c.id);
+      if (error) throw error;
       await carregar();
     } catch {
       setErro(
-        'Não foi possível excluir. Verifique se ainda existem usuários ou chamados vinculados a este condomínio.'
+        'Não foi possível inativar. Verifique se ainda existem usuários ou chamados vinculados a este condomínio.'
       );
     } finally {
       setExcluindoId(null);
@@ -137,7 +130,7 @@ export function AdminCondominios() {
                   disabled={excluindoId === c.id}
                   className="btn-perigo text-xs font-semibold px-3 py-1.5"
                 >
-                  {excluindoId === c.id ? 'Excluindo...' : 'Excluir'}
+                  {excluindoId === c.id ? 'Inativando...' : 'Inativar'}
                 </button>
               </div>
             ))}
