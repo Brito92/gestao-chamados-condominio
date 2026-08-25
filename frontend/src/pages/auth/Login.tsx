@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { LayoutPublico } from '@/components/LayoutPublico';
 import { useAuth } from '@/context/AuthContext';
 import type { PapelUsuario } from '@/types/database';
 
@@ -17,10 +16,8 @@ export function Login() {
   const [erro, setErro] = useState<string | null>(null);
   const [avisoPrimeiroAcesso, setAvisoPrimeiroAcesso] = useState<string | null>(null);
 
-  // Já logado e com perfil válido: manda direto para a área correspondente.
   if (sessao && usuario) {
-    const destino = rotaPadraoPorPapel(usuario.papel);
-    return <Navigate to={destino} replace />;
+    return <Navigate to={rotaPadraoPorPapel(usuario.papel)} replace />;
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -49,7 +46,7 @@ export function Login() {
           setErro(erroCadastro);
         } else {
           setAvisoPrimeiroAcesso(
-            'Senha criada! Se o seu projeto exigir confirmação por e-mail, verifique sua caixa de entrada antes de entrar.'
+            'Senha criada! Se o projeto exigir confirmação por e-mail, verifique sua caixa de entrada antes de entrar.',
           );
           setModo('entrar');
         }
@@ -60,108 +57,162 @@ export function Login() {
   }
 
   return (
-    <LayoutPublico titulo="Acesso da equipe interna" voltarPara="/">
-      <div className="flex flex-col gap-5">
-        <div className="flex rounded-xl bg-ardosia-100 p-1">
-          <button
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${
-              modo === 'entrar' ? 'bg-white shadow-card text-ardosia-800' : 'text-ardosia-500'
-            }`}
-            onClick={() => {
-              setModo('entrar');
-              setErro(null);
-            }}
-          >
-            Entrar
-          </button>
-          <button
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${
-              modo === 'primeiro_acesso'
-                ? 'bg-white shadow-card text-ardosia-800'
-                : 'text-ardosia-500'
-            }`}
-            onClick={() => {
-              setModo('primeiro_acesso');
-              setErro(null);
-            }}
-          >
-            Primeiro acesso
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#101010] text-white flex flex-col lg:flex-row">
+      <section className="relative overflow-hidden bg-[#101010] px-6 py-8 sm:px-10 lg:flex lg:min-h-screen lg:w-[46%] lg:flex-col lg:justify-center lg:px-16">
+        <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full border border-[#d7aa36]/20" />
+        <div className="absolute -bottom-32 -right-20 h-80 w-80 rounded-full border border-[#d7aa36]/20" />
 
-        {modo === 'primeiro_acesso' && (
-          <p className="text-sm text-ardosia-500">
-            Use o mesmo e-mail que o síndico cadastrou para você e escolha uma senha. Só
-            e-mails já cadastrados pelo admin conseguem criar acesso.
+        <div className="relative mx-auto flex max-w-md flex-col items-center text-center lg:items-start lg:text-left">
+          <img
+            src="/logo-gabriel-lima.png"
+            alt="Gabriel Lima — Síndico Profissional"
+            className="h-56 w-56 object-contain drop-shadow-[0_0_30px_rgba(231,183,61,0.16)] sm:h-64 sm:w-64 lg:h-72 lg:w-72"
+          />
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.35em] text-[#e8bd54]">
+            Gestão condominial
           </p>
-        )}
+          <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-[#f7d36d] sm:text-4xl">
+            Cuidado que organiza.
+          </h1>
+          <p className="mt-3 max-w-sm text-sm leading-6 text-white/60">
+            Acompanhe solicitações, compras e serviços do seu condomínio em um só lugar.
+          </p>
+        </div>
+      </section>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="block">
-            <span className="block text-sm font-medium text-ardosia-700 mb-1.5">E-mail</span>
-            <input
-              className="input"
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="voce@condominio.dev"
-            />
-          </label>
+      <main className="flex flex-1 items-center justify-center bg-[#171717] px-4 py-8 sm:px-8 lg:px-12">
+        <div className="w-full max-w-md">
+          <Link
+            to="/"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#e8bd54] transition-colors hover:text-[#ffe49a]"
+          >
+            <span aria-hidden="true">←</span> Voltar ao início
+          </Link>
 
-          <label className="block">
-            <span className="block text-sm font-medium text-ardosia-700 mb-1.5">Senha</span>
-            <input
-              className="input"
-              type="password"
-              autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="••••••••"
-            />
-          </label>
+          <div className="rounded-3xl border border-[#d7aa36]/25 bg-[#202020] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.35)] sm:p-8">
+            <div className="mb-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#d7aa36]">
+                Área restrita
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-white">Acesso da equipe</h2>
+              <p className="mt-2 text-sm text-white/55">
+                Entre para acompanhar e administrar os chamados.
+              </p>
+            </div>
 
-          {modo === 'primeiro_acesso' && (
-            <label className="block">
-              <span className="block text-sm font-medium text-ardosia-700 mb-1.5">
-                Confirmar senha
-              </span>
-              <input
-                className="input"
-                type="password"
-                autoComplete="new-password"
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                placeholder="••••••••"
-              />
-            </label>
-          )}
+            <div className="mb-6 flex rounded-2xl border border-white/10 bg-black/20 p-1">
+              <button
+                type="button"
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+                  modo === 'entrar'
+                    ? 'bg-[#e8bd54] text-[#171717] shadow-lg shadow-[#d7aa36]/10'
+                    : 'text-white/55 hover:text-white'
+                }`}
+                onClick={() => {
+                  setModo('entrar');
+                  setErro(null);
+                }}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+                  modo === 'primeiro_acesso'
+                    ? 'bg-[#e8bd54] text-[#171717] shadow-lg shadow-[#d7aa36]/10'
+                    : 'text-white/55 hover:text-white'
+                }`}
+                onClick={() => {
+                  setModo('primeiro_acesso');
+                  setErro(null);
+                }}
+              >
+                Primeiro acesso
+              </button>
+            </div>
 
-          {erro && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-              {erro}
-            </p>
-          )}
-          {avisoPrimeiroAcesso && (
-            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-              {avisoPrimeiroAcesso}
-            </p>
-          )}
+            {modo === 'primeiro_acesso' && (
+              <p className="mb-5 rounded-xl border border-[#d7aa36]/20 bg-[#d7aa36]/10 p-3 text-sm leading-5 text-[#f5d982]">
+                Use o mesmo e-mail cadastrado pelo administrador e escolha uma senha.
+              </p>
+            )}
 
-          <button type="submit" disabled={enviando} className="btn-primario">
-            {enviando
-              ? 'Processando...'
-              : modo === 'entrar'
-                ? 'Entrar'
-                : 'Criar senha e continuar'}
-          </button>
-        </form>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-white/75">E-mail</span>
+                <input
+                  className="w-full rounded-xl border border-white/10 bg-[#121212] px-4 py-3.5 text-sm text-white placeholder:text-white/25 focus:border-[#e8bd54] focus:outline-none focus:ring-2 focus:ring-[#e8bd54]/25"
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="voce@condominio.dev"
+                />
+              </label>
 
-        <Link to="/" className="text-center text-xs text-ardosia-400">
-          Sou morador, voltar ao início
-        </Link>
-      </div>
-    </LayoutPublico>
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-white/75">Senha</span>
+                <input
+                  className="w-full rounded-xl border border-white/10 bg-[#121212] px-4 py-3.5 text-sm text-white placeholder:text-white/25 focus:border-[#e8bd54] focus:outline-none focus:ring-2 focus:ring-[#e8bd54]/25"
+                  type="password"
+                  autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </label>
+
+              {modo === 'primeiro_acesso' && (
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-white/75">
+                    Confirmar senha
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-white/10 bg-[#121212] px-4 py-3.5 text-sm text-white placeholder:text-white/25 focus:border-[#e8bd54] focus:outline-none focus:ring-2 focus:ring-[#e8bd54]/25"
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmarSenha}
+                    onChange={(e) => setConfirmarSenha(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                </label>
+              )}
+
+              {erro && (
+                <p className="rounded-xl border border-red-400/30 bg-red-950/40 p-3 text-sm text-red-200">
+                  {erro}
+                </p>
+              )}
+              {avisoPrimeiroAcesso && (
+                <p className="rounded-xl border border-emerald-400/30 bg-emerald-950/40 p-3 text-sm text-emerald-200">
+                  {avisoPrimeiroAcesso}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={enviando}
+                className="mt-1 rounded-xl bg-[#e8bd54] px-4 py-3.5 text-center font-bold text-[#171717] shadow-lg shadow-[#d7aa36]/10 transition hover:bg-[#f4d477] active:scale-[0.98] disabled:opacity-60"
+              >
+                {enviando
+                  ? 'Processando...'
+                  : modo === 'entrar'
+                    ? 'Entrar'
+                    : 'Criar senha e continuar'}
+              </button>
+            </form>
+
+            <Link to="/" className="mt-6 block text-center text-xs text-white/40 transition hover:text-white/70">
+              Sou morador, voltar ao início
+            </Link>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-white/30">
+            Gabriel Lima · Síndico Profissional
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }
 
