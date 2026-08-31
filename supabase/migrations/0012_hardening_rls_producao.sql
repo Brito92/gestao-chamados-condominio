@@ -39,6 +39,7 @@ begin
 end $$;
 
 drop policy if exists "condominios_select_publico" on condominios;
+drop policy if exists "condominios_select_publico_ativos_ou_admin" on condominios;
 drop policy if exists "condominios_insert_publico_mvp" on condominios;
 drop policy if exists "condominios_update_publico_mvp" on condominios;
 drop policy if exists "condominios_insert_admin" on condominios;
@@ -54,6 +55,7 @@ drop policy if exists "usuarios_insert_admin" on usuarios;
 drop policy if exists "usuarios_update_admin" on usuarios;
 
 drop policy if exists "chamados_select_publico" on chamados;
+drop policy if exists "chamados_select_interno" on chamados;
 drop policy if exists "chamados_insert_publico" on chamados;
 drop policy if exists "chamados_update_publico_mvp" on chamados;
 drop policy if exists "chamados_update_admin" on chamados;
