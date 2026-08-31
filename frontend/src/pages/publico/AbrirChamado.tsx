@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import { validarWhatsApp } from '@/utils/validarContato';
 import type { TipoProblema, Condominio } from '@/types/database';
 
 export function AbrirChamado() {
@@ -18,6 +19,7 @@ export function AbrirChamado() {
   const [fotos, setFotos] = useState<File[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroWhatsapp, setErroWhatsapp] = useState<string | null>(null);
   const [condominios, setCondominios] = useState<Condominio[]>([]);
   const [condominioSelecionado, setCondominioSelecionado, limparCondominio] = usePersistedState('rascunho:publico:condominio', '');
   const [carregandoCondominios, setCarregandoCondominios] = useState(true);
@@ -46,17 +48,15 @@ export function AbrirChamado() {
     carregar();
   }, []);
 
-  /**
-   * Valida formato de WhatsApp: extrai dígitos e verifica se tem 10 ou 11 dígitos.
-   * Aceita formatos como: (99) 99999-9999, 99999999999, +55 99 99999-9999
-   */
-  function validarWhatsApp(valor: string): boolean {
-    const apenasDigitos = valor.replace(/\D/g, '');
-    // Remove código do país se começar com 55
-    const semPais = apenasDigitos.startsWith('55')
-      ? apenasDigitos.slice(2)
-      : apenasDigitos;
-    return semPais.length === 10 || semPais.length === 11;
+  // Valida WhatsApp em tempo real conforme o usuário digita
+  function handleWhatsappChange(valor: string) {
+    setWhatsapp(valor);
+    if (valor.trim()) {
+      const validacao = validarWhatsApp(valor);
+      setErroWhatsapp(validacao.erro || null);
+    } else {
+      setErroWhatsapp(null);
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -73,8 +73,9 @@ export function AbrirChamado() {
       return;
     }
 
-    if (!validarWhatsApp(whatsapp)) {
-      setErro('WhatsApp inválido. Use formato com 10 ou 11 dígitos (ex: (92) 99999-0000).');
+    const validacaoWhatsapp = validarWhatsApp(whatsapp);
+    if (!validacaoWhatsapp.valido) {
+      setErro(validacaoWhatsapp.erro ?? 'WhatsApp inválido');
       return;
     }
 
@@ -160,12 +161,17 @@ export function AbrirChamado() {
 
         <Campo label="WhatsApp para contato" obrigatorio>
           <input
-            className="input"
+            className={`input ${erroWhatsapp ? 'border-red-500 focus:ring-red-200' : ''}`}
             value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
+            onChange={(e) => handleWhatsappChange(e.target.value)}
             placeholder="(92) 99999-0000"
             inputMode="tel"
           />
+          {erroWhatsapp && (
+            <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
+              ⚠️ {erroWhatsapp}
+            </p>
+          )}
         </Campo>
 
         <Campo label="Local do problema" obrigatorio>
@@ -204,7 +210,7 @@ export function AbrirChamado() {
           label="Fotos do problema (opcional)"
           arquivos={fotos}
           onChange={setFotos}
-          maxImagens={5}
+          maxImagens={3}
         />
 
         {erro && (
