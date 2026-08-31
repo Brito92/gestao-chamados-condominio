@@ -81,27 +81,27 @@ export function AbrirChamado() {
 
     setEnviando(true);
     try {
-      const { data: chamado, error } = await supabase
+      const chamadoId = crypto.randomUUID();
+      const { error } = await supabase
         .from('chamados')
         .insert({
+          id: chamadoId,
           condominio_id: condominioSelecionado,
           morador_nome: nome.trim(),
           morador_whatsapp: whatsapp.trim(),
           local_problema: local.trim(),
           tipo_problema: tipo,
           descricao: descricao.trim(),
-        })
-        .select('id')
-        .single();
+        });
 
       if (error) throw error;
 
       // Faz upload de todas as fotos
-      if (fotos.length > 0 && chamado) {
+      if (fotos.length > 0) {
         await Promise.all(
           fotos.map((foto) =>
             enviarAnexoChamado({
-              chamadoId: chamado.id,
+              chamadoId,
               arquivo: foto,
               tipo: 'FOTO_SOLICITACAO',
             })

@@ -105,6 +105,9 @@ as $$
     );
 $$;
 
+alter function registrar_historico_chamado() security definer;
+alter function registrar_historico_chamado() set search_path = public;
+
 -- Condomínios: público só enxerga ativos para abrir chamado; admin enxerga e
 -- gerencia todos, incluindo inativos.
 create policy "condominios_select_publico_ativos_ou_admin" on condominios
