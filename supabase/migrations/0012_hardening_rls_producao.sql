@@ -44,6 +44,39 @@ drop policy if exists "chamado_historico_select_interno" on chamado_historico;
 
 drop policy if exists "status_transicoes_select_publico" on status_transicoes_validas;
 
+create or replace function meu_admin_master()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from usuarios
+    where auth_user_id = auth.uid()
+      and ativo = true
+      and papel = 'ADMIN'
+      and admin_master = true
+  );
+$$;
+
+create or replace function pode_editar_usuario(usuario_alvo uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select meu_admin_master()
+    or exists (
+      select 1
+      from usuarios alvo
+      where alvo.id = usuario_alvo
+        and (alvo.papel <> 'ADMIN' or alvo.id = meu_usuario_id())
+    );
+$$;
+
 -- Condomínios: público só enxerga ativos para abrir chamado; admin enxerga e
 -- gerencia todos, incluindo inativos.
 create policy "condominios_select_publico_ativos_ou_admin" on condominios
