@@ -136,7 +136,7 @@ export function AdminDashboard() {
 
           <div className="grid grid-cols-2 gap-4">
             <CardMetrica
-              titulo="Chamados abertos"
+              titulo="Total de chamados"
               valor={metricas.total}
               destaque
             />
