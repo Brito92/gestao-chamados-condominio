@@ -12,6 +12,32 @@ alter table chamado_anexos enable row level security;
 alter table chamado_historico enable row level security;
 alter table status_transicoes_validas enable row level security;
 
+alter table usuarios
+  add column if not exists admin_master boolean not null default false;
+
+alter table chamados
+  add column if not exists artifice_atribuido_por uuid references usuarios(id) on delete set null,
+  add column if not exists artifice_atribuido_em timestamptz,
+  add column if not exists observacao_artifice text,
+  add column if not exists executado boolean not null default true,
+  add column if not exists motivo_nao_execucao text,
+  add column if not exists chat_aberto_em timestamptz,
+  add column if not exists observacao_aprovacao text;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'chk_motivo_nao_execucao'
+      and conrelid = 'public.chamados'::regclass
+  ) then
+    alter table chamados
+      add constraint chk_motivo_nao_execucao
+      check (executado or motivo_nao_execucao is not null);
+  end if;
+end $$;
+
 drop policy if exists "condominios_select_publico" on condominios;
 drop policy if exists "condominios_insert_publico_mvp" on condominios;
 drop policy if exists "condominios_update_publico_mvp" on condominios;
