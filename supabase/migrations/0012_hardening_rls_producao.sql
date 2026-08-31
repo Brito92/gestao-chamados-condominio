@@ -149,7 +149,13 @@ create policy "usuarios_update_admin" on usuarios
 create policy "chamados_select_interno" on chamados
   for select using (
     meu_papel() = 'ADMIN'
-    or (meu_papel() = 'COMPRAS' and status = 'EM_COMPRAS')
+    or (
+      meu_papel() = 'COMPRAS'
+      and (
+        status = 'EM_COMPRAS'
+        or (status = 'AGUARDANDO_EXECUCAO' and compras_por = meu_usuario_id())
+      )
+    )
     or (
       meu_papel() = 'ARTIFICE'
       and (
