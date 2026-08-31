@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import type { Chamado, ChamadoAnexo, ChamadoCompleto, ChamadoHistorico, Usuario } from '@/types/database';
 
+interface ChamadoPublicoRpc {
+  chamado: Chamado;
+  anexos: ChamadoAnexo[] | null;
+  historico: ChamadoHistorico[] | null;
+}
+
 interface UseChamadoCompletoResult {
   chamado: ChamadoCompleto | null;
   carregando: boolean;
@@ -27,8 +33,38 @@ export function useChamadoCompleto(params: {
     setCarregando(true);
     setErro(null);
 
+    if (!id && numeroChamado) {
+      const { data, error } = await supabase
+        .rpc('consultar_chamado_publico', { p_numero_chamado: numeroChamado })
+        .maybeSingle<ChamadoPublicoRpc>();
+
+      if (error) {
+        setErro(error.message);
+        setCarregando(false);
+        return;
+      }
+
+      if (!data) {
+        setErro('Chamado não encontrado.');
+        setChamado(null);
+        setCarregando(false);
+        return;
+      }
+
+      setChamado({
+        ...data.chamado,
+        anexos: data.anexos ?? [],
+        historico: (data.historico ?? []).map((item) => ({
+          ...item,
+          usuario: null,
+        })),
+      });
+      setCarregando(false);
+      return;
+    }
+
     let query = supabase.from('chamados').select('*');
-    query = id ? query.eq('id', id) : query.eq('numero_chamado', numeroChamado ?? '');
+    query = query.eq('id', id ?? '');
 
     const { data: chamadoData, error: erroChamado } = await query.maybeSingle<Chamado>();
 
