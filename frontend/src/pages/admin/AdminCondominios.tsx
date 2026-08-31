@@ -22,7 +22,7 @@ export function AdminCondominios() {
     const { data } = await supabase
       .from('condominios')
       .select('*')
-      .eq('ativo', true)
+      .order('ativo', { ascending: false })
       .order('nome', { ascending: true })
       .returns<Condominio[]>();
     setCondominios(data ?? []);
@@ -86,11 +86,25 @@ export function AdminCondominios() {
     }
   }
 
+  async function reativar(c: Condominio) {
+    setErro(null);
+    setExcluindoId(c.id);
+    try {
+      const { error } = await supabase.from('condominios').update({ ativo: true }).eq('id', c.id);
+      if (error) throw error;
+      await carregar();
+    } catch {
+      setErro('Não foi possível reativar este condomínio.');
+    } finally {
+      setExcluindoId(null);
+    }
+  }
+
   return (
     <LayoutInterno titulo="Condomínios">
       <div className="flex flex-col gap-4">
         <p className="text-sm text-ardosia-500">
-          Cadastre os condomínios atendidos pelo sistema ou remova um que não é mais utilizado.
+          Cadastre os condomínios atendidos pelo sistema ou inative um que não é mais utilizado.
         </p>
 
         <button className="btn-primario" onClick={() => setMostrarForm((v) => !v)}>
@@ -128,16 +142,37 @@ export function AdminCondominios() {
             {condominios.map((c) => (
               <div key={c.id} className="flex items-center justify-between py-3 gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-ardosia-800">{c.nome}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-ardosia-800">{c.nome}</p>
+                    <span
+                      className={
+                        c.ativo
+                          ? 'rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700'
+                          : 'rounded-full bg-ardosia-100 px-2 py-0.5 text-xs font-semibold text-ardosia-500'
+                      }
+                    >
+                      {c.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
                   <p className="text-xs text-ardosia-400">{c.endereco ?? 'Sem endereço'}</p>
                 </div>
-                <button
-                  onClick={() => excluir(c)}
-                  disabled={excluindoId === c.id}
-                  className="btn-perigo text-xs font-semibold px-3 py-1.5"
-                >
-                  {excluindoId === c.id ? 'Inativando...' : 'Inativar'}
-                </button>
+                {c.ativo ? (
+                  <button
+                    onClick={() => excluir(c)}
+                    disabled={excluindoId === c.id}
+                    className="btn-perigo text-xs font-semibold px-3 py-1.5"
+                  >
+                    {excluindoId === c.id ? 'Inativando...' : 'Inativar'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => reativar(c)}
+                    disabled={excluindoId === c.id}
+                    className="btn-secundario text-xs font-semibold px-3 py-1.5"
+                  >
+                    {excluindoId === c.id ? 'Reativando...' : 'Reativar'}
+                  </button>
+                )}
               </div>
             ))}
             {condominios.length === 0 && (
