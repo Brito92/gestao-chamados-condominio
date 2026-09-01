@@ -29,6 +29,22 @@ export function AdminDashboard() {
   const [condominios, setCondominios] = useState<Condominio[]>([]);
   const [condominioSelecionado, setCondominioSelecionado] = useState<string | null>(null);
 
+  /**
+   * Calcula o primeiro e último dia do mês vigente em ISO 8601
+   * Necessário para filtrar chamados no Supabase
+   */
+  function obterPeriodoMesVigente() {
+    const agora = new Date();
+    const primeiroDay = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const ultimoDay = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
+
+    // Formatar em ISO 8601 para Supabase (YYYY-MM-DD HH:mm:ss)
+    const inicioMes = primeiroDay.toISOString();
+    const fimMes = ultimoDay.toISOString();
+
+    return { inicioMes, fimMes, mes: agora.getMonth() + 1, ano: agora.getFullYear() };
+  }
+
   useEffect(() => {
     async function carregarCondominios() {
       const { data } = await supabase
@@ -43,9 +59,13 @@ export function AdminDashboard() {
 
   useEffect(() => {
     async function carregar() {
+      const { inicioMes, fimMes } = obterPeriodoMesVigente();
+
       let query = supabase
         .from('chamados')
         .select('*')
+        .gte('criado_em', inicioMes)
+        .lte('criado_em', fimMes)
         .order('criado_em', { ascending: false });
 
       // Se um condomínio foi selecionado, filtrar por ele
@@ -109,7 +129,9 @@ export function AdminDashboard() {
   }, [condominioSelecionado]);
 
   return (
-    <LayoutInterno titulo="Painel geral">
+    <LayoutInterno 
+      titulo={`Painel geral - ${new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date()).replace(/\b\w/g, l => l.toUpperCase())}`}
+    >
       {!metricas ? (
         <p className="text-sm text-ardosia-400">Carregando métricas...</p>
       ) : (
