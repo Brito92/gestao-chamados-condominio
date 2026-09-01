@@ -29,8 +29,31 @@ export function ArtificeChamadoDetalhe() {
   const [modoAcao, setModoAcao] = usePersistedState<ModoAcao>(`rascunho:artifice:modo:${id ?? ''}`, 'normal');
   const [motivoNaoExecucao, setMotivoNaoExecucao, limparMotivoNaoExecucao] = usePersistedState(`rascunho:artifice:nao-executado:${id ?? ''}`, '');
 
+  async function assumir() {
+    if (!chamado) return;
+    setProcessando(true);
+    setErroAcao(null);
+    const { error } = await supabase.rpc('assumir_chamado', { p_chamado_id: chamado.id });
+    if (error) setErroAcao(error.message);
+    else await recarregar();
+    setProcessando(false);
+  }
+
+  async function liberar() {
+    if (!chamado || !window.confirm('Liberar este chamado para outro artífice?')) return;
+    setProcessando(true);
+    const { error } = await supabase.rpc('liberar_chamado', { p_chamado_id: chamado.id });
+    if (error) setErroAcao(error.message);
+    else await recarregar();
+    setProcessando(false);
+  }
+
   async function iniciarExecucao() {
     if (!chamado || !usuario) return;
+    if (chamado.assumido_por !== usuario.id) {
+      setErroAcao('Assuma o chamado antes de iniciar a execução.');
+      return;
+    }
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -49,6 +72,10 @@ export function ArtificeChamadoDetalhe() {
 
   async function salvarObservacao() {
     if (!chamado) return;
+    if (!usuario || chamado.assumido_por !== usuario.id) {
+      setErroAcao('Assuma o chamado antes de registrar uma observação.');
+      return;
+    }
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -70,6 +97,10 @@ export function ArtificeChamadoDetalhe() {
     if (!chamado) return;
     if (!motivoNaoExecucao.trim()) {
       setErroAcao('Informe o motivo por não executar o serviço.');
+      return;
+    }
+    if (!usuario || chamado.assumido_por !== usuario.id) {
+      setErroAcao('Assuma o chamado antes de atualizar a execução.');
       return;
     }
     setProcessando(true);
@@ -99,6 +130,11 @@ export function ArtificeChamadoDetalhe() {
       setErroAcao('Anexe a foto do "depois" para concluir o chamado.');
       return;
     }
+    if (!usuario || chamado.assumido_por !== usuario.id) {
+      setErroAcao('Assuma o chamado antes de concluir a execução.');
+      return;
+    }
+    if (!window.confirm('Confirmar a conclusão deste chamado?')) return;
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -150,6 +186,10 @@ export function ArtificeChamadoDetalhe() {
     );
   }
 
+  const possuiLock = chamado.assumido_por === usuario?.id &&
+    (!chamado.bloqueio_expira_em || new Date(chamado.bloqueio_expira_em).getTime() > Date.now());
+  const bloqueadoPorOutro = Boolean(chamado.assumido_por && !possuiLock);
+
   return (
     <LayoutInterno titulo={chamado.numero_chamado ? `Chamado #${chamado.numero_chamado}` : 'Chamado'}>
       <div className="flex flex-col gap-4">
@@ -164,6 +204,7 @@ export function ArtificeChamadoDetalhe() {
             <p className="text-xs text-ardosia-400">Solicitante</p>
             <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
             <p className="text-sm text-ardosia-500">Contato: {chamado.morador_whatsapp}</p>
+            {chamado.morador_email && <p className="text-sm text-ardosia-500">E-mail: {chamado.morador_email}</p>}
           </div>
           <div>
             <p className="font-semibold text-ardosia-800">{chamado.local_problema}</p>
@@ -184,6 +225,12 @@ export function ArtificeChamadoDetalhe() {
               <p className="text-sm text-blue-800">{chamado.observacao_compras}</p>
             </div>
           )}
+          {chamado.observacao_artifice && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+              <p className="text-xs text-emerald-600 font-medium mb-1">Observação do artífice</p>
+              <p className="text-sm text-emerald-800">{chamado.observacao_artifice}</p>
+            </div>
+          )}
           {chamado.anexos.filter(a => a.tipo === 'FOTO_SOLICITACAO').map((foto) => (
             <div key={foto.id}>
               <p className="text-xs text-ardosia-400 mb-2">Foto da solicitação</p>
@@ -201,16 +248,24 @@ export function ArtificeChamadoDetalhe() {
           <div className="card"><HistoricoChamado historico={chamado.historico} /></div>
         </div>
 
-        {chamado.status === 'AGUARDANDO_EXECUCAO' && (
+        {!possuiLock && chamado.status !== 'FINALIZADO' && (
+          <div className="card flex flex-col gap-2 border-ambar-500/40">
+            <p className="text-sm text-ardosia-700">{bloqueadoPorOutro ? 'Este chamado está sendo atendido por outro artífice.' : 'Assuma o chamado para iniciar ou atualizar a execução.'}</p>
+            {!bloqueadoPorOutro && <button className="btn-primario" onClick={assumir} disabled={processando}>{processando ? 'Assumindo...' : 'Assumir atendimento'}</button>}
+          </div>
+        )}
+
+        {possuiLock && chamado.status === 'AGUARDANDO_EXECUCAO' && (
           <div className="flex flex-col gap-2">
             {erroAcao && <p className="text-sm text-red-600">{erroAcao}</p>}
             <button className="btn-primario" onClick={iniciarExecucao} disabled={processando}>
               {processando ? 'Iniciando...' : 'Iniciar execução'}
             </button>
+            <button className="btn-secundario" onClick={liberar} disabled={processando}>Liberar chamado</button>
           </div>
         )}
 
-        {chamado.status === 'EM_ANDAMENTO' && modoAcao === 'normal' && (
+        {possuiLock && chamado.status === 'EM_ANDAMENTO' && modoAcao === 'normal' && (
           <div className="card flex flex-col gap-3">
             <p className="text-sm text-ardosia-600">
               Registre as fotos de antes e depois para concluir o chamado.
@@ -242,7 +297,7 @@ export function ArtificeChamadoDetalhe() {
           </div>
         )}
 
-        {chamado.status === 'EM_ANDAMENTO' && modoAcao === 'marcar_nao_executado' && (
+        {possuiLock && chamado.status === 'EM_ANDAMENTO' && modoAcao === 'marcar_nao_executado' && (
           <div className="card flex flex-col gap-3">
             <p className="text-sm text-ardosia-700 font-semibold">Motivo da não execução</p>
             <label className="block">
@@ -277,7 +332,7 @@ export function ArtificeChamadoDetalhe() {
           </div>
         )}
 
-        {chamado.status === 'EM_ANDAMENTO' && (
+        {possuiLock && chamado.status === 'EM_ANDAMENTO' && (
           <div className="card flex flex-col gap-3">
             <label className="block">
               <span className="block text-sm font-medium text-ardosia-700 mb-1.5">

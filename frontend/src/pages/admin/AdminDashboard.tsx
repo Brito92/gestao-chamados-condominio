@@ -5,12 +5,15 @@ import { supabase } from '@/lib/supabaseClient';
 import { StatusBadge } from '@/components/StatusBadge';
 import type { Chamado, ChamadoAnexo, Condominio, StatusChamado } from '@/types/database';
 import { STATUS_META } from '@/utils/statusChamado';
+import { calcularGastoTotal, obterSituacaoSla } from '@/utils/fluxoChamado';
+import { useAuth } from '@/context/AuthContext';
 
 interface Metricas {
   porStatus: Record<StatusChamado, number>;
   total: number;
   slaMedioHoras: number | null;
   gastoTotal: number;
+  slaAtrasados: number;
   ultimosChamados: Chamado[];
 }
 
@@ -25,9 +28,16 @@ const STATUS_ORDEM: StatusChamado[] = [
 ];
 
 export function AdminDashboard() {
+  const { usuario } = useAuth();
   const [metricas, setMetricas] = useState<Metricas | null>(null);
   const [condominios, setCondominios] = useState<Condominio[]>([]);
   const [condominioSelecionado, setCondominioSelecionado] = useState<string | null>(null);
+  const [permitirReabertura, setPermitirReabertura] = useState(true);
+  const adminMaster = usuario?.papel === 'ADMIN' && usuario.admin_master;
+
+  useEffect(() => {
+    if (!adminMaster && usuario?.condominio_id) setCondominioSelecionado(usuario.condominio_id);
+  }, [adminMaster, usuario?.condominio_id]);
 
   /**
    * Calcula o primeiro e último dia do mês vigente em ISO 8601
@@ -36,11 +46,11 @@ export function AdminDashboard() {
   function obterPeriodoMesVigente() {
     const agora = new Date();
     const primeiroDay = new Date(agora.getFullYear(), agora.getMonth(), 1);
-    const ultimoDay = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
+    const primeiroDiaProximoMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
 
     // Formatar em ISO 8601 para Supabase (YYYY-MM-DD HH:mm:ss)
     const inicioMes = primeiroDay.toISOString();
-    const fimMes = ultimoDay.toISOString();
+    const fimMes = primeiroDiaProximoMes.toISOString();
 
     return { inicioMes, fimMes, mes: agora.getMonth() + 1, ano: agora.getFullYear() };
   }
@@ -58,6 +68,20 @@ export function AdminDashboard() {
   }, []);
 
   useEffect(() => {
+    supabase.from('configuracoes_sistema').select('valor_booleano').eq('chave', 'permitir_reabertura_morador').maybeSingle<{ valor_booleano: boolean }>()
+      .then(({ data }) => { if (data) setPermitirReabertura(data.valor_booleano); });
+  }, []);
+
+  async function alternarReabertura() {
+    if (!adminMaster) return;
+    const novoValor = !permitirReabertura;
+    const { error } = await supabase.from('configuracoes_sistema')
+      .update({ valor_booleano: novoValor, atualizado_por: usuario?.id ?? null })
+      .eq('chave', 'permitir_reabertura_morador');
+    if (!error) setPermitirReabertura(novoValor);
+  }
+
+  useEffect(() => {
     async function carregar() {
       const { inicioMes, fimMes } = obterPeriodoMesVigente();
 
@@ -65,7 +89,7 @@ export function AdminDashboard() {
         .from('chamados')
         .select('*')
         .gte('criado_em', inicioMes)
-        .lte('criado_em', fimMes)
+        .lt('criado_em', fimMes)
         .order('criado_em', { ascending: false });
 
       // Se um condomínio foi selecionado, filtrar por ele
@@ -91,6 +115,7 @@ export function AdminDashboard() {
           total: 0,
           slaMedioHoras: null,
           gastoTotal: 0,
+          slaAtrasados: 0,
           ultimosChamados: [],
         });
         return;
@@ -115,13 +140,15 @@ export function AdminDashboard() {
             }, 0) / finalizados.length
           : null;
 
-      const gastoTotal = (anexosComValor ?? []).reduce((soma, a) => soma + Number(a.valor ?? 0), 0);
+      const gastoTotal = calcularGastoTotal(anexosComValor ?? []);
+      const slaAtrasados = lista.filter((c) => obterSituacaoSla(c).situacao === 'ATRASADO').length;
 
       setMetricas({
         porStatus,
         total: lista.length,
         slaMedioHoras,
         gastoTotal,
+        slaAtrasados,
         ultimosChamados: lista.slice(0, 5),
       });
     }
@@ -145,6 +172,7 @@ export function AdminDashboard() {
                 className="input"
                 value={condominioSelecionado ?? ''}
                 onChange={(e) => setCondominioSelecionado(e.target.value || null)}
+                disabled={!adminMaster && Boolean(usuario?.condominio_id)}
               >
                 <option value="">Todos os condomínios</option>
                 {condominios.map((cond) => (
@@ -153,6 +181,10 @@ export function AdminDashboard() {
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="mt-3 flex items-center gap-2 text-xs text-ardosia-600">
+              <input type="checkbox" checked={permitirReabertura} onChange={alternarReabertura} disabled={!adminMaster} />
+              Permitir que moradores solicitem reabertura de chamados finalizados
             </label>
           </div>
 
@@ -180,6 +212,10 @@ export function AdminDashboard() {
             <CardMetrica
               titulo="Aguardando análise"
               valor={metricas.porStatus.EM_ANALISE}
+            />
+            <CardMetrica
+              titulo="Alertas de SLA"
+              valor={metricas.slaAtrasados}
             />
           </div>
 

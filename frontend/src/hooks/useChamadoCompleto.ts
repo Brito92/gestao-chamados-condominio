@@ -96,7 +96,10 @@ export function useChamadoCompleto(params: {
         .returns<ChamadoHistorico[]>(),
     ]);
 
-    const idsUsuarios = [...new Set((historico ?? []).map((item) => item.usuario_id).filter(Boolean))] as string[];
+    const idsUsuarios = [...new Set([
+      ...(historico ?? []).map((item) => item.usuario_id),
+      chamadoData.artifice_id,
+    ].filter(Boolean))] as string[];
     const { data: usuarios } = idsUsuarios.length
       ? await supabase.from('usuarios').select('id, nome, papel').in('id', idsUsuarios).returns<Pick<Usuario, 'id' | 'nome' | 'papel'>[]>()
       : { data: [] as Pick<Usuario, 'id' | 'nome' | 'papel'>[] };
@@ -109,6 +112,7 @@ export function useChamadoCompleto(params: {
         ...item,
         usuario: item.usuario_id ? usuariosPorId.get(item.usuario_id) ?? null : null,
       })),
+      artifice: chamadoData.artifice_id ? usuariosPorId.get(chamadoData.artifice_id) ?? null : null,
     });
     setCarregando(false);
   }, [id, numeroChamado]);

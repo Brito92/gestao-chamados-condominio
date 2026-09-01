@@ -44,6 +44,7 @@ export function AdminSolicitacaoDetalhe() {
 
   async function aprovar() {
     if (!chamado) return;
+    if (!window.confirm('Confirma a aprovação desta solicitação e o envio para Compras?')) return;
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -84,6 +85,7 @@ export function AdminSolicitacaoDetalhe() {
       setErroAcao('Informe o motivo da rejeição.');
       return;
     }
+    if (!window.confirm('Confirma a rejeição? O motivo e o anexo serão disponibilizados ao morador.')) return;
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -146,6 +148,7 @@ export function AdminSolicitacaoDetalhe() {
             <p className="text-xs text-ardosia-400">Morador</p>
             <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
             <p className="text-sm text-ardosia-500">{chamado.morador_whatsapp}</p>
+            {chamado.morador_email && <p className="text-sm text-ardosia-500">{chamado.morador_email}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -53,6 +53,7 @@ export interface Chamado {
   condominio_id: string;
   morador_nome: string;
   morador_whatsapp: string;
+  morador_email: string | null;
   local_problema: string;
   tipo_problema: TipoProblema;
   descricao: string;
@@ -78,6 +79,12 @@ export interface Chamado {
   executado: boolean;
   motivo_nao_execucao: string | null;
   chat_aberto_em: string | null;
+  observacao_reabertura: string | null;
+  reaberto_em: string | null;
+  assumido_por: string | null;
+  assumido_em: string | null;
+  bloqueio_expira_em: string | null;
+  versao: number;
 }
 
 export interface SolicitacaoMensagem {
@@ -108,6 +115,8 @@ export interface ChamadoHistorico {
   observacao: string | null;
   usuario_id: string | null;
   criado_em: string;
+  evento: string;
+  detalhes: Record<string, unknown>;
   usuario?: Pick<Usuario, 'id' | 'nome' | 'papel'> | null;
 }
 

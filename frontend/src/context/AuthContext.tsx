@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import type { Usuario } from '@/types/database';
@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erroVinculo, setErroVinculo] = useState<string | null>(null);
+  const sessaoAtualRef = useRef<Session | null>(null);
 
   async function carregarUsuarioDaSessao(sessaoAtual: Session | null) {
     if (!sessaoAtual) {
@@ -61,17 +62,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSessao(data.session);
+      sessaoAtualRef.current = data.session;
       await carregarUsuarioDaSessao(data.session);
       setCarregando(false);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (evento, novaSessao) => {
+      const mesmaSessao = Boolean(
+        sessaoAtualRef.current?.user.id &&
+        novaSessao?.user.id &&
+        sessaoAtualRef.current.user.id === novaSessao.user.id,
+      );
       setSessao(novaSessao);
+      sessaoAtualRef.current = novaSessao;
 
       // Ao voltar para uma aba/app em segundo plano, o Supabase pode renovar
       // o token. Isso não muda o usuário e não pode desmontar os formulários,
       // pois faria o rascunho visual desaparecer.
-      if (evento === 'TOKEN_REFRESHED') return;
+      if (evento !== 'SIGNED_OUT' && mesmaSessao) return;
 
       setCarregando(true);
       await carregarUsuarioDaSessao(novaSessao);

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Chamado } from '@/types/database';
 import { StatusBadge } from './StatusBadge';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import { obterSituacaoSla } from '@/utils/fluxoChamado';
 
 function formatarData(iso: string) {
   return new Date(iso).toLocaleString('pt-BR', {
@@ -18,6 +19,15 @@ export function CartaoChamado({ chamado, linkPara }: { chamado: Chamado; linkPar
         </span>
         <StatusBadge status={chamado.status} />
       </div>
+      {obterSituacaoSla(chamado).situacao !== 'SEM_SLA' && (
+        <span className={`self-start rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+          obterSituacaoSla(chamado).situacao === 'ATRASADO'
+            ? 'bg-red-100 text-red-700'
+            : 'bg-emerald-100 text-emerald-700'
+        }`}>
+          {obterSituacaoSla(chamado).situacao === 'ATRASADO' ? 'SLA atrasado' : 'SLA no prazo'}
+        </span>
+      )}
       <p className="font-semibold text-ardosia-800">{chamado.local_problema}</p>
       <p className="text-sm text-ardosia-500 line-clamp-2">{chamado.descricao}</p>
       <div className="flex items-center justify-between text-xs text-ardosia-400 mt-1">

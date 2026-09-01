@@ -10,7 +10,7 @@ function formatarData(iso: string) {
   });
 }
 
-export function HistoricoChamado({ historico }: { historico: ChamadoHistorico[] }) {
+export function HistoricoChamado({ historico, mostrarResponsavel = true }: { historico: ChamadoHistorico[]; mostrarResponsavel?: boolean }) {
   const ordenado = [...historico].sort(
     (a, b) => new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime()
   );
@@ -23,8 +23,11 @@ export function HistoricoChamado({ historico }: { historico: ChamadoHistorico[] 
           <p className="text-sm font-semibold text-ardosia-800">
             {STATUS_META[item.status_novo].label}
           </p>
+          {item.evento && item.evento !== 'STATUS' && (
+            <p className="text-xs font-medium text-ambar-700">{rotuloEvento(item.evento)}</p>
+          )}
           <p className="text-xs text-ardosia-400">{formatarData(item.criado_em)}</p>
-          {item.usuario && (
+          {mostrarResponsavel && item.usuario && (
             <p className="text-xs text-ardosia-500 mt-0.5">Responsável: {item.usuario.nome}</p>
           )}
           {item.observacao && (
@@ -36,4 +39,15 @@ export function HistoricoChamado({ historico }: { historico: ChamadoHistorico[] 
       ))}
     </ol>
   );
+}
+
+function rotuloEvento(evento: string) {
+  const rotulos: Record<string, string> = {
+    ABERTURA: 'Abertura',
+    ATRIBUICAO: 'Atribuição de responsável',
+    ATENDIMENTO: 'Lock de atendimento',
+    OBSERVACAO: 'Atualização/observação',
+    REABERTURA: 'Reabertura solicitada pelo morador',
+  };
+  return rotulos[evento] ?? evento;
 }

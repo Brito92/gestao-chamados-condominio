@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { LayoutPublico } from '@/components/LayoutPublico';
 import { ProgressoChamado } from '@/components/ProgressoChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import { VisualizadorImagem } from '@/components/VisualizadorImagem';
+import { supabase } from '@/lib/supabaseClient';
 
 export function ConsultarChamado() {
   const [numeroBusca, setNumeroBusca] = usePersistedState('rascunho:publico:consulta', '');
@@ -11,8 +14,33 @@ export function ConsultarChamado() {
     'rascunho:publico:consulta-enviada',
     null,
   );
+  const [contatoReabertura, setContatoReabertura] = usePersistedState('rascunho:publico:reabertura-contato', '');
+  const [motivoReabertura, setMotivoReabertura] = usePersistedState('rascunho:publico:reabertura-motivo', '');
+  const [reabrindo, setReabrindo] = useState(false);
+  const [erroReabertura, setErroReabertura] = useState<string | null>(null);
+  const [reaberturaEnviada, setReaberturaEnviada] = useState(false);
 
-  const { chamado, carregando, erro } = useChamadoCompleto({ numeroChamado: numeroConsultado ?? undefined });
+  const { chamado, carregando, erro, recarregar } = useChamadoCompleto({ numeroChamado: numeroConsultado ?? undefined });
+
+  async function solicitarReabertura() {
+    if (!numeroConsultado || !contatoReabertura.trim() || motivoReabertura.trim().length < 5) {
+      setErroReabertura('Informe o contato usado na abertura e explique o motivo da reabertura.');
+      return;
+    }
+    setReabrindo(true);
+    setErroReabertura(null);
+    const { error: erroRpc } = await supabase.rpc('reabrir_chamado', {
+      p_numero_chamado: numeroConsultado,
+      p_contato: contatoReabertura.trim(),
+      p_motivo: motivoReabertura.trim(),
+    });
+    if (erroRpc) setErroReabertura(erroRpc.message);
+    else {
+      setReaberturaEnviada(true);
+      await recarregar();
+    }
+    setReabrindo(false);
+  }
 
   return (
     <LayoutPublico titulo="Consultar chamado" voltarPara="/">
@@ -91,7 +119,25 @@ export function ConsultarChamado() {
 
             <div>
               <p className="text-xs text-ardosia-400 mb-2">Histórico</p>
-              <HistoricoChamado historico={chamado.historico} />
+              {chamado.anexos.filter((a) => a.tipo === 'ANEXO_REJEICAO' || a.tipo === 'FOTO_DEPOIS').map((anexo) => (
+                <div key={anexo.id} className="mb-4">
+                  <p className="text-xs text-ardosia-400 mb-2">{anexo.tipo === 'ANEXO_REJEICAO' ? 'Anexo da rejeição' : 'Foto da conclusão'}</p>
+                  <VisualizadorImagem url={anexo.url} alt="Anexo do chamado" className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full" />
+                </div>
+              ))}
+
+              {chamado.status === 'FINALIZADO' && (
+                <div className="card border border-ambar-300 bg-ambar-50 flex flex-col gap-3 mb-4">
+                  <p className="text-sm font-semibold text-ardosia-800">Precisa de um novo atendimento?</p>
+                  <p className="text-xs text-ardosia-600">A reabertura confirma sua identidade pelo contato informado na abertura.</p>
+                  <input className="input" placeholder="E-mail ou WhatsApp usado na abertura" value={contatoReabertura} onChange={(e) => setContatoReabertura(e.target.value)} />
+                  <textarea className="input min-h-[80px]" placeholder="Explique o motivo da reabertura" value={motivoReabertura} onChange={(e) => setMotivoReabertura(e.target.value)} />
+                  {erroReabertura && <p className="text-sm text-red-600">{erroReabertura}</p>}
+                  {reaberturaEnviada ? <p className="text-sm text-emerald-700 font-medium">Solicitação reaberta e enviada para análise.</p> : <button className="btn-primario" onClick={solicitarReabertura} disabled={reabrindo}>{reabrindo ? 'Enviando...' : 'Solicitar reabertura'}</button>}
+                </div>
+              )}
+
+              <HistoricoChamado historico={chamado.historico} mostrarResponsavel={false} />
             </div>
           </div>
         )}

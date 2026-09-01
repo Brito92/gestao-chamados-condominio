@@ -19,7 +19,7 @@ export function ComprasChamadoDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { usuario } = useAuth();
-  const { chamado, carregando, erro } = useChamadoCompleto({ id });
+  const { chamado, carregando, erro, recarregar } = useChamadoCompleto({ id });
 
   const [modo, setModo, limparModo] = usePersistedState<Modo>(`rascunho:compras:modo:${id ?? ''}`, 'menu');
   const [orcamento, setOrcamento] = useState<File | null>(null);
@@ -31,6 +31,28 @@ export function ComprasChamadoDetalhe() {
   const [artifices, setArtifices] = useState<Usuario[]>([]);
   const [carregandoArtifices, setCarregandoArtifices] = useState(false);
   const [artificeId, setArtificeId, limparArtifice] = usePersistedState<string | null>(`rascunho:compras:artifice:${id ?? ''}`, null);
+
+  async function assumir() {
+    if (!chamado) return;
+    setProcessando(true);
+    setErroAcao(null);
+    const { error } = await supabase.rpc('assumir_chamado', { p_chamado_id: chamado.id });
+    if (error) setErroAcao(error.message);
+    else await recarregar();
+    setProcessando(false);
+  }
+
+  async function liberar() {
+    if (!chamado || !window.confirm('Liberar este chamado para outro comprador?')) return;
+    setProcessando(true);
+    const { error } = await supabase.rpc('liberar_chamado', { p_chamado_id: chamado.id });
+    if (error) setErroAcao(error.message);
+    else {
+      setModo('menu');
+      await recarregar();
+    }
+    setProcessando(false);
+  }
 
   // Carrega lista de artífices quando modal de decisão abre
   useEffect(() => {
@@ -69,6 +91,12 @@ export function ComprasChamadoDetalhe() {
       setErroAcao('Anexe o comprovante da compra para prosseguir.');
       return;
     }
+    const valorNumerico = valor.trim() ? Number(valor.replace('.', '').replace(',', '.')) : null;
+    if (valor.trim() && (valorNumerico === null || !Number.isFinite(valorNumerico) || valorNumerico < 0)) {
+      setErroAcao('Informe um valor de compra válido.');
+      return;
+    }
+    if (artificeId && artificeId !== chamado.artifice_id && !window.confirm('Trocar o artífice responsável? A alteração ficará registrada no histórico.')) return;
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -84,8 +112,9 @@ export function ComprasChamadoDetalhe() {
         chamadoId: chamado.id,
         arquivo: comprovante,
         tipo: 'COMPROVANTE_COMPRA',
-        enviadoPor: usuario?.id,
-        descricao: valor ? `Valor: R$ ${valor}` : undefined,
+          enviadoPor: usuario?.id,
+          descricao: valor ? `Valor: R$ ${valor}` : undefined,
+          valor: valorNumerico,
       });
 
       const updateData: Record<string, unknown> = {
@@ -124,6 +153,7 @@ export function ComprasChamadoDetalhe() {
       setErroAcao('Explique por que este chamado não precisa de compra de materiais.');
       return;
     }
+    if (artificeId && artificeId !== chamado.artifice_id && !window.confirm('Atribuir este chamado a outro artífice? A alteração ficará registrada no histórico.')) return;
     setProcessando(true);
     setErroAcao(null);
     try {
@@ -175,6 +205,10 @@ export function ComprasChamadoDetalhe() {
     );
   }
 
+  const possuiLock = chamado.assumido_por === usuario?.id &&
+    (!chamado.bloqueio_expira_em || new Date(chamado.bloqueio_expira_em).getTime() > Date.now());
+  const bloqueadoPorOutro = Boolean(chamado.assumido_por && !possuiLock);
+
   return (
     <LayoutInterno titulo={chamado.numero_chamado ? `Chamado #${chamado.numero_chamado}` : 'Chamado'}>
       <div className="flex flex-col gap-4">
@@ -185,6 +219,8 @@ export function ComprasChamadoDetalhe() {
             <p className="text-xs text-ardosia-400">Solicitante</p>
             <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
             <p className="text-sm text-ardosia-500">Contato: {chamado.morador_whatsapp}</p>
+            {chamado.morador_email && <p className="text-sm text-ardosia-500">E-mail: {chamado.morador_email}</p>}
+            {chamado.artifice && <p className="text-sm text-ambar-700 mt-1">Artífice atribuído: {chamado.artifice.nome}</p>}
           </div>
           <div>
             <p className="font-semibold text-ardosia-800">{chamado.local_problema}</p>
@@ -216,7 +252,14 @@ export function ComprasChamadoDetalhe() {
           <div className="card"><HistoricoChamado historico={chamado.historico} /></div>
         </div>
 
-        {modo === 'menu' && (
+        {!possuiLock && (
+          <div className="card flex flex-col gap-2 border-ambar-500/40">
+            <p className="text-sm text-ardosia-700">{bloqueadoPorOutro ? 'Este chamado está sendo atendido por outro comprador.' : 'Assuma o chamado para editar e avançar a etapa.'}</p>
+            {!bloqueadoPorOutro && <button className="btn-primario" onClick={assumir} disabled={processando}>{processando ? 'Assumindo...' : 'Assumir atendimento'}</button>}
+          </div>
+        )}
+
+        {possuiLock && modo === 'menu' && (
           <div className="flex flex-col gap-2">
             <button className="btn-primario" onClick={() => setModo('com_compra')}>
               Registrar material comprado
@@ -224,10 +267,11 @@ export function ComprasChamadoDetalhe() {
             <button className="btn-secundario" onClick={() => setModo('sem_compra')}>
               Não precisa de compra — avançar direto
             </button>
+            <button className="btn-secundario" onClick={liberar} disabled={processando}>Liberar chamado</button>
           </div>
         )}
 
-        {modo === 'com_compra' && (
+        {possuiLock && modo === 'com_compra' && (
           <div className="card flex flex-col gap-3">
             <CampoFoto label="Orçamento (opcional)" arquivo={orcamento} onChange={setOrcamento} />
             <CampoFoto
@@ -282,7 +326,7 @@ export function ComprasChamadoDetalhe() {
           </div>
         )}
 
-        {modo === 'sem_compra' && (
+        {possuiLock && modo === 'sem_compra' && (
           <div className="card flex flex-col gap-3">
             <label className="block">
               <span className="block text-sm font-medium text-ardosia-700 mb-1.5">

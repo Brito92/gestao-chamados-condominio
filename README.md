@@ -56,6 +56,8 @@ Após rodar as migrations você já terá:
 - Um chamado de exemplo em `EM_ANALISE`, pronto para aprovar/rejeitar.
 - O bucket de Storage `chamados-anexos` (público) para fotos e anexos.
 
+Após `0009`, aplique também, na ordem, `0010_correcoes_permissoes_historico.sql`, `0011_rls_policies.sql`, `0012_hardening_rls_producao.sql` e `0013_auditoria_fluxo_concorrencia.sql`. A última migration adiciona protocolo na abertura, revisão do formulário, reabertura parametrizável, trilha de auditoria detalhada e locks atômicos para Compras/Artífice.
+
 ## 2. Rodando o frontend
 
 ```bash
@@ -153,6 +155,16 @@ Regras aplicadas via trigger:
 - **Admin Master**: pode criar/editar outros admins e editar admin master
 - **Admin Comum**: não pode editar admin master
 - **Morador**: leitura pública para consulta por número do chamado
+
+## Auditoria e operação concorrente
+
+- O protocolo é gerado no momento da abertura e aparece imediatamente na tela de sucesso.
+- A abertura tem etapa de revisão antes do envio; o e-mail do morador é obrigatório para novas solicitações.
+- Compras e Artífice precisam assumir o chamado; o lock é atômico, expira em 15 minutos e pode ser liberado.
+- Reatribuições, observações, transições e reaberturas ficam na trilha com evento e responsável.
+- O morador pode solicitar reabertura de chamados finalizados quando `permitir_reabertura_morador` estiver habilitado em `configuracoes_sistema`.
+- Testes estáticos do frontend: `npm test` (requer Node.js instalado).
+- Asserções SQL de regressão: `supabase/tests/0013_auditoria_fluxo.sql`.
 
 ## 7. Funcionalidades Implementadas
 

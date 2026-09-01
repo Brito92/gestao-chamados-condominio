@@ -50,6 +50,7 @@ export function AdminChamadoDetalhe() {
 
   async function salvarArtifice() {
     if (!chamado) return;
+    if (artificeSelecionado !== (chamado.artifice_id ?? '') && !window.confirm('Trocar o artífice responsável? A alteração ficará registrada no histórico.')) return;
     setSalvandoArtifice(true);
     setErroArtifice(null);
     const { error } = await supabase.from('chamados').update({
@@ -121,6 +122,7 @@ export function AdminChamadoDetalhe() {
             <p className="text-xs text-ardosia-400">Morador</p>
             <p className="font-semibold text-ardosia-800">{chamado.morador_nome}</p>
             <p className="text-sm text-ardosia-500">{chamado.morador_whatsapp}</p>
+            {chamado.morador_email && <p className="text-sm text-ardosia-500">{chamado.morador_email}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

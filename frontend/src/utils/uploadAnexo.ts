@@ -11,9 +11,10 @@ export async function enviarAnexoChamado(params: {
   arquivo: File;
   tipo: TipoAnexo;
   descricao?: string;
+  valor?: number | null;
   enviadoPor?: string | null;
 }): Promise<void> {
-  const { chamadoId, arquivo, tipo, descricao, enviadoPor } = params;
+  const { chamadoId, arquivo, tipo, descricao, valor, enviadoPor } = params;
 
   const extensao = arquivo.name.split('.').pop() ?? 'bin';
   const caminho = `${chamadoId}/${tipo.toLowerCase()}-${Date.now()}.${extensao}`;
@@ -33,6 +34,7 @@ export async function enviarAnexoChamado(params: {
     tipo,
     url: publicUrlData.publicUrl,
     descricao: descricao ?? null,
+    valor: valor ?? null,
     enviado_por: enviadoPor ?? null,
   });
 
