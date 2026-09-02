@@ -12,7 +12,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '');
+/**
+ * O cliente usa Authorization Bearer para a sessão. Não enviar cookies
+ * ambientamente evita que uma sessão baseada em cookie de outro contexto seja
+ * reutilizada em uma requisição mutável (defesa adicional contra CSRF).
+ */
+const fetchSemCookies: typeof fetch = (input, init) =>
+  fetch(input, { ...init, credentials: 'omit' });
+
+export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
+  global: { fetch: fetchSemCookies },
+});
 
 /** Nome do bucket de Storage usado para todos os anexos de chamados. */
 export const BUCKET_ANEXOS = 'chamados-anexos';

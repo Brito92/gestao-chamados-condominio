@@ -9,6 +9,8 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
+import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import type { Usuario } from '@/types/database';
 
@@ -44,6 +46,12 @@ export function AdminSolicitacaoDetalhe() {
 
   async function aprovar() {
     if (!chamado) return;
+    const erroOrigem = validarOrigemDaAcao();
+    const erroObservacao = validarTextoLivre(observacaoAprovacao, 'A observação');
+    if (erroOrigem || erroObservacao) {
+      setErroAcao(erroOrigem ?? erroObservacao);
+      return;
+    }
     if (!window.confirm('Confirma a aprovação desta solicitação e o envio para Compras?')) return;
     setProcessando(true);
     setErroAcao(null);
@@ -55,7 +63,7 @@ export function AdminSolicitacaoDetalhe() {
       
       // Só inclui observacao_aprovacao se foi preenchida
       if (observacaoAprovacao.trim()) {
-        updateData.observacao_aprovacao = observacaoAprovacao.trim();
+        updateData.observacao_aprovacao = sanitizarTextoPlano(observacaoAprovacao).trim();
       }
       if (artificeId) {
         updateData.artifice_id = artificeId;
@@ -81,6 +89,12 @@ export function AdminSolicitacaoDetalhe() {
 
   async function rejeitar() {
     if (!chamado) return;
+    const erroOrigem = validarOrigemDaAcao();
+    const erroMotivo = validarTextoLivre(motivo, 'O motivo da rejeição');
+    if (erroOrigem || erroMotivo) {
+      setErroAcao(erroOrigem ?? erroMotivo);
+      return;
+    }
     if (!motivo.trim()) {
       setErroAcao('Informe o motivo da rejeição.');
       return;
@@ -93,7 +107,7 @@ export function AdminSolicitacaoDetalhe() {
         .from('chamados')
         .update({
           status: 'REJEITADO',
-          motivo_rejeicao: motivo.trim(),
+          motivo_rejeicao: sanitizarTextoPlano(motivo).trim(),
           aprovado_por: usuario?.id ?? null,
         })
         .eq('id', chamado.id);
@@ -246,6 +260,7 @@ export function AdminSolicitacaoDetalhe() {
               label="Anexo (opcional)"
               arquivo={anexoRejeicao}
               onChange={setAnexoRejeicao}
+              accept="application/pdf,image/jpeg,image/png"
             />
             {erroAcao && <p className="text-sm text-red-600">{erroAcao}</p>}
             <div className="flex gap-2">

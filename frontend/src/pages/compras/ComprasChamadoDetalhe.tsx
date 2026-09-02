@@ -9,6 +9,8 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
+import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
 import type { Usuario } from '@/types/database';
@@ -33,6 +35,11 @@ export function ComprasChamadoDetalhe() {
   const [artificeId, setArtificeId, limparArtifice] = usePersistedState<string | null>(`rascunho:compras:artifice:${id ?? ''}`, null);
 
   async function assumir() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado) return;
     setProcessando(true);
     setErroAcao(null);
@@ -43,6 +50,11 @@ export function ComprasChamadoDetalhe() {
   }
 
   async function liberar() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado || !window.confirm('Liberar este chamado para outro comprador?')) return;
     setProcessando(true);
     const { error } = await supabase.rpc('liberar_chamado', { p_chamado_id: chamado.id });
@@ -87,6 +99,11 @@ export function ComprasChamadoDetalhe() {
 
   async function avancarComCompra() {
     if (!chamado) return;
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!comprovante) {
       setErroAcao('Anexe o comprovante da compra para prosseguir.');
       return;
@@ -148,7 +165,17 @@ export function ComprasChamadoDetalhe() {
   }
 
   async function avancarSemCompra() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado) return;
+    const erroJustificativa = validarTextoLivre(justificativa, 'A justificativa');
+    if (erroJustificativa) {
+      setErroAcao(erroJustificativa);
+      return;
+    }
     if (!justificativa.trim()) {
       setErroAcao('Explique por que este chamado não precisa de compra de materiais.');
       return;
@@ -160,7 +187,7 @@ export function ComprasChamadoDetalhe() {
       const updateData: Record<string, unknown> = {
         status: 'AGUARDANDO_EXECUCAO',
         compras_por: usuario?.id ?? null,
-        observacao_compras: justificativa.trim(),
+        observacao_compras: sanitizarTextoPlano(justificativa).trim(),
       };
 
       // Se compras atribuiu um artífice, incluir na atualização
@@ -273,11 +300,17 @@ export function ComprasChamadoDetalhe() {
 
         {possuiLock && modo === 'com_compra' && (
           <div className="card flex flex-col gap-3">
-            <CampoFoto label="Orçamento (opcional)" arquivo={orcamento} onChange={setOrcamento} />
+            <CampoFoto
+              label="Orçamento (opcional)"
+              arquivo={orcamento}
+              onChange={setOrcamento}
+              accept="application/pdf,image/jpeg,image/png"
+            />
             <CampoFoto
               label="Comprovante da compra"
               arquivo={comprovante}
               onChange={setComprovante}
+              accept="application/pdf,image/jpeg,image/png"
               obrigatorio
             />
             <label className="block">

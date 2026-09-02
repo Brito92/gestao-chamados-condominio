@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import type { Chamado, ChamadoAnexo, Condominio, StatusChamado } from '@/types/database';
 import { STATUS_META } from '@/utils/statusChamado';
 import { calcularGastoTotal, obterSituacaoSla } from '@/utils/fluxoChamado';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 import { useAuth } from '@/context/AuthContext';
 
 interface Metricas {
@@ -74,6 +75,7 @@ export function AdminDashboard() {
 
   async function alternarReabertura() {
     if (!adminMaster) return;
+    if (validarOrigemDaAcao()) return;
     const novoValor = !permitirReabertura;
     const { error } = await supabase.from('configuracoes_sistema')
       .update({ valor_booleano: novoValor, atualizado_por: usuario?.id ?? null })

@@ -7,6 +7,8 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { supabase } from '@/lib/supabaseClient';
+import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 
 export function ConsultarChamado() {
   const [numeroBusca, setNumeroBusca] = usePersistedState('rascunho:publico:consulta', '');
@@ -23,8 +25,18 @@ export function ConsultarChamado() {
   const { chamado, carregando, erro, recarregar } = useChamadoCompleto({ numeroChamado: numeroConsultado ?? undefined });
 
   async function solicitarReabertura() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroReabertura(erroOrigem);
+      return;
+    }
     if (!numeroConsultado || !contatoReabertura.trim() || motivoReabertura.trim().length < 5) {
       setErroReabertura('Informe o contato usado na abertura e explique o motivo da reabertura.');
+      return;
+    }
+    const erroMotivo = validarTextoLivre(motivoReabertura, 'O motivo da reabertura');
+    if (erroMotivo) {
+      setErroReabertura(erroMotivo);
       return;
     }
     setReabrindo(true);
@@ -32,7 +44,7 @@ export function ConsultarChamado() {
     const { error: erroRpc } = await supabase.rpc('reabrir_chamado', {
       p_numero_chamado: numeroConsultado,
       p_contato: contatoReabertura.trim(),
-      p_motivo: motivoReabertura.trim(),
+      p_motivo: sanitizarTextoPlano(motivoReabertura).trim(),
     });
     if (erroRpc) setErroReabertura(erroRpc.message);
     else {

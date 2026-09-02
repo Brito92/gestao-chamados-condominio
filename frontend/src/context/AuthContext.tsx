@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import type { Usuario } from '@/types/database';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 
 /**
  * Gerencia a sessão de autenticação (Supabase Auth) e carrega o registro
@@ -59,6 +60,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setErroVinculo(null);
   }
 
+  const validarSessaoAtiva = useCallback(async (): Promise<boolean> => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('Não foi possível validar a sessão neste momento:', error.message);
+      return Boolean(sessaoAtualRef.current);
+    }
+
+    if (!data.session) {
+      setSessao(null);
+      sessaoAtualRef.current = null;
+      setUsuario(null);
+      setErroVinculo(null);
+      return false;
+    }
+
+    const { data: usuarioRemoto, error: erroSessao } = await supabase.auth.getUser();
+    if (erroSessao) {
+      if (erroSessao.status === 401) {
+        setSessao(null);
+        setUsuario(null);
+        setErroVinculo('Sua sessão expirou. Faça login novamente.');
+        await supabase.auth.signOut();
+        return false;
+      }
+      console.warn('Não foi possível validar o token neste momento:', erroSessao.message);
+      return Boolean(sessaoAtualRef.current);
+    }
+
+    if (!usuarioRemoto.user) {
+      setSessao(null);
+      sessaoAtualRef.current = null;
+      setUsuario(null);
+      setErroVinculo('Sua sessão não pôde ser confirmada. Faça login novamente.');
+      await supabase.auth.signOut();
+      return false;
+    }
+
+    const { data: usuarioAtivo, error: erroUsuario } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('auth_user_id', usuarioRemoto.user.id)
+      .eq('ativo', true)
+      .maybeSingle<Usuario>();
+
+    if (erroUsuario) {
+      console.warn('Não foi possível consultar o perfil da sessão:', erroUsuario.message);
+      return Boolean(sessaoAtualRef.current);
+    }
+
+    if (!usuarioAtivo) {
+      setSessao(data.session);
+      setUsuario(null);
+      setErroVinculo('Sua conta foi desativada ou não está vinculada a um perfil ativo.');
+      await supabase.auth.signOut();
+      return false;
+    }
+
+    setSessao(data.session);
+    sessaoAtualRef.current = data.session;
+    setUsuario(usuarioAtivo);
+    setErroVinculo(null);
+    return true;
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSessao(data.session);
@@ -66,6 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await carregarUsuarioDaSessao(data.session);
       setCarregando(false);
     });
+
+    const validarAoRetornar = () => {
+      if (document.visibilityState === 'visible') void validarSessaoAtiva();
+    };
+    const intervalo = window.setInterval(() => void validarSessaoAtiva(), 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', validarAoRetornar);
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (evento, novaSessao) => {
       const mesmaSessao = Boolean(
@@ -86,22 +157,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCarregando(false);
     });
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => {
+      window.clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', validarAoRetornar);
+      listener.subscription.unsubscribe();
+    };
+  }, [validarSessaoAtiva]);
 
   async function entrar(email: string, senha: string) {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) return { erro: erroOrigem };
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
     if (error) return { erro: traduzirErroAuth(error.message) };
+    await supabase.rpc('registrar_evento_auditoria', {
+      p_acao: 'LOGIN',
+      p_user_agent: typeof navigator === 'undefined' ? null : navigator.userAgent,
+    });
     return { erro: null };
   }
 
   async function cadastrarSenha(email: string, senha: string) {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) return { erro: erroOrigem };
     const { error } = await supabase.auth.signUp({ email, password: senha });
     if (error) return { erro: traduzirErroAuth(error.message) };
     return { erro: null };
   }
 
   async function sair() {
+    await supabase.rpc('registrar_evento_auditoria', {
+      p_acao: 'LOGOUT',
+      p_user_agent: typeof navigator === 'undefined' ? null : navigator.userAgent,
+    });
     await supabase.auth.signOut();
   }
 

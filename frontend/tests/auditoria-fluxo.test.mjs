@@ -3,9 +3,13 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const migration = await readFile(new URL('../../supabase/migrations/0013_auditoria_fluxo_concorrencia.sql', import.meta.url), 'utf8');
+const auditMigration = await readFile(new URL('../../supabase/migrations/0014_audit_log.sql', import.meta.url), 'utf8');
 const abrirChamado = await readFile(new URL('../src/pages/publico/AbrirChamado.tsx', import.meta.url), 'utf8');
 const consulta = await readFile(new URL('../src/pages/publico/ConsultarChamado.tsx', import.meta.url), 'utf8');
 const auth = await readFile(new URL('../src/context/AuthContext.tsx', import.meta.url), 'utf8');
+const sanitizer = await readFile(new URL('../src/utils/sanitizar.ts', import.meta.url), 'utf8');
+const upload = await readFile(new URL('../src/utils/uploadAnexo.ts', import.meta.url), 'utf8');
+const vite = await readFile(new URL('../vite.config.ts', import.meta.url), 'utf8');
 const compras = await readFile(new URL('../src/pages/compras/ComprasChamadoDetalhe.tsx', import.meta.url), 'utf8');
 const artifice = await readFile(new URL('../src/pages/artifice/ArtificeChamadoDetalhe.tsx', import.meta.url), 'utf8');
 
@@ -57,4 +61,36 @@ test('o cálculo de gasto considera somente comprovantes', () => {
   const total = anexos.filter((item) => item.tipo === 'COMPROVANTE_COMPRA')
     .reduce((soma, item) => soma + Number(item.valor ?? 0), 0);
   assert.equal(total, 125.5);
+});
+
+test('a sessao valida token e perfil ativo periodicamente', () => {
+  assert.match(auth, /5 \* 60 \* 1000/);
+  assert.match(auth, /getUser\(\)/);
+});
+
+test('a entrada de texto livre e sanitizada e rejeita marcacao HTML', () => {
+  assert.match(sanitizer, /DOMPurify/);
+  assert.match(sanitizer, /ALLOWED_TAGS: \[\]/);
+  assert.match(sanitizer, /validarTextoLivre/);
+});
+
+test('uploads validam MIME, tamanho e assinatura do arquivo', () => {
+  assert.match(upload, /MIMES_PERMITIDOS/);
+  assert.match(upload, /TAMANHO_MAXIMO/);
+  assert.match(upload, /validarMagicBytes/);
+  assert.match(upload, /arrayBuffer/);
+});
+
+test('CSP e aplicada pelo servidor de desenvolvimento do Vite', () => {
+  assert.match(vite, /csp-headers-dev/);
+  assert.match(vite, /Content-Security-Policy/);
+  assert.match(vite, /configureServer/);
+});
+
+test('auditoria detalhada registra alteracoes e autenticacao', () => {
+  assert.match(auditMigration, /create table if not exists audit_log/);
+  assert.match(auditMigration, /create or replace function log_auditoria/);
+  assert.match(auditMigration, /registrar_evento_auditoria/);
+  assert.match(auth, /p_acao: 'LOGIN'/);
+  assert.match(auth, /p_acao: 'LOGOUT'/);
 });

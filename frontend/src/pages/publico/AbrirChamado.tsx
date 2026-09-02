@@ -8,6 +8,8 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { validarWhatsApp } from '@/utils/validarContato';
 import { emailValido } from '@/utils/fluxoChamado';
+import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 import type { TipoProblema, Condominio } from '@/types/database';
 
 export function AbrirChamado() {
@@ -70,6 +72,12 @@ export function AbrirChamado() {
       return false;
     }
 
+    const erroDescricao = validarTextoLivre(descricao, 'A descrição');
+    if (erroDescricao) {
+      setErro(erroDescricao);
+      return false;
+    }
+
     if (!condominioSelecionado) {
       setErro('Selecione um condomínio.');
       return false;
@@ -96,6 +104,11 @@ export function AbrirChamado() {
 
   async function confirmarEnvio() {
     if (!validarFormulario()) return;
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErro(erroOrigem);
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -109,7 +122,7 @@ export function AbrirChamado() {
           p_morador_email: email.trim().toLowerCase(),
           p_local_problema: local.trim(),
           p_tipo_problema: tipo,
-          p_descricao: descricao.trim(),
+          p_descricao: sanitizarTextoPlano(descricao).trim(),
         })
         .single<{ id: string; numero_chamado: string }>();
 

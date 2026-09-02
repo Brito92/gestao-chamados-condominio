@@ -5,13 +5,14 @@ interface CampoFotoProps {
   arquivo: File | null;
   onChange: (arquivo: File | null) => void;
   obrigatorio?: boolean;
+  accept?: string;
 }
 
 /**
  * Campo de anexo de imagem otimizado para mobile: abre diretamente a
  * câmera/galeria do dispositivo (capture) e mostra uma pré-visualização.
  */
-export function CampoFoto({ label, arquivo, onChange, obrigatorio }: CampoFotoProps) {
+export function CampoFoto({ label, arquivo, onChange, obrigatorio, accept = 'image/*' }: CampoFotoProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -33,12 +34,12 @@ export function CampoFoto({ label, arquivo, onChange, obrigatorio }: CampoFotoPr
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
-        capture="environment"
+        accept={accept}
+        capture={accept === 'image/*' ? 'environment' : undefined}
         className="hidden"
         onChange={(e) => handleFile(e.target.files)}
       />
-      {preview ? (
+      {preview && arquivo?.type.startsWith('image/') ? (
         <div className="relative">
           <img
             src={preview}
@@ -54,6 +55,17 @@ export function CampoFoto({ label, arquivo, onChange, obrigatorio }: CampoFotoPr
             className="absolute top-2 right-2 bg-white/90 text-ardosia-700 text-xs font-medium px-2.5 py-1 rounded-full shadow-card"
           >
             Trocar
+          </button>
+        </div>
+      ) : arquivo ? (
+        <div className="w-full min-h-28 rounded-xl border-2 border-dashed border-ardosia-300 text-ardosia-600 flex flex-col items-center justify-center gap-2 px-4 text-center">
+          <span className="text-sm font-medium break-all">{arquivo.name}</span>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="text-xs font-semibold text-ambar-700"
+          >
+            Trocar arquivo
           </button>
         </div>
       ) : (

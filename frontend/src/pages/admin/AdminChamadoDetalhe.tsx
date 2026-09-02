@@ -9,6 +9,7 @@ import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 import type { Usuario } from '@/types/database';
 
 const NAO_CANCELAVEL = new Set(['FINALIZADO', 'CANCELADO', 'REJEITADO']);
@@ -49,6 +50,11 @@ export function AdminChamadoDetalhe() {
   }, [chamado?.id, chamado?.artifice_id, chamado?.condominio_id]);
 
   async function salvarArtifice() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroArtifice(erroOrigem);
+      return;
+    }
     if (!chamado) return;
     if (artificeSelecionado !== (chamado.artifice_id ?? '') && !window.confirm('Trocar o artífice responsável? A alteração ficará registrada no histórico.')) return;
     setSalvandoArtifice(true);
@@ -82,6 +88,7 @@ export function AdminChamadoDetalhe() {
   }
 
   async function cancelarChamado() {
+    if (validarOrigemDaAcao()) return;
     if (!chamado) return;
     if (!confirm('Cancelar este chamado por inconsistência ou duplicidade?')) return;
     setCancelando(true);

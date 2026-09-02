@@ -10,6 +10,8 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { enviarAnexoChamado } from '@/utils/uploadAnexo';
+import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
 
@@ -30,6 +32,11 @@ export function ArtificeChamadoDetalhe() {
   const [motivoNaoExecucao, setMotivoNaoExecucao, limparMotivoNaoExecucao] = usePersistedState(`rascunho:artifice:nao-executado:${id ?? ''}`, '');
 
   async function assumir() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado) return;
     setProcessando(true);
     setErroAcao(null);
@@ -40,6 +47,11 @@ export function ArtificeChamadoDetalhe() {
   }
 
   async function liberar() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado || !window.confirm('Liberar este chamado para outro artífice?')) return;
     setProcessando(true);
     const { error } = await supabase.rpc('liberar_chamado', { p_chamado_id: chamado.id });
@@ -49,6 +61,11 @@ export function ArtificeChamadoDetalhe() {
   }
 
   async function iniciarExecucao() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado || !usuario) return;
     if (chamado.assumido_por !== usuario.id) {
       setErroAcao('Assuma o chamado antes de iniciar a execução.');
@@ -71,6 +88,12 @@ export function ArtificeChamadoDetalhe() {
   }
 
   async function salvarObservacao() {
+    const erroOrigem = validarOrigemDaAcao();
+    const erroObservacao = validarTextoLivre(observacao, 'A observação');
+    if (erroOrigem || erroObservacao) {
+      setErroAcao(erroOrigem ?? erroObservacao);
+      return;
+    }
     if (!chamado) return;
     if (!usuario || chamado.assumido_por !== usuario.id) {
       setErroAcao('Assuma o chamado antes de registrar uma observação.');
@@ -81,7 +104,7 @@ export function ArtificeChamadoDetalhe() {
     try {
       const { error } = await supabase
         .from('chamados')
-        .update({ observacao_artifice: observacao.trim() || null })
+        .update({ observacao_artifice: sanitizarTextoPlano(observacao).trim() || null })
         .eq('id', chamado.id);
       if (error) throw error;
       await recarregar();
@@ -94,6 +117,12 @@ export function ArtificeChamadoDetalhe() {
   }
 
   async function marcarNaoExecutado() {
+    const erroOrigem = validarOrigemDaAcao();
+    const erroMotivo = validarTextoLivre(motivoNaoExecucao, 'O motivo');
+    if (erroOrigem || erroMotivo) {
+      setErroAcao(erroOrigem ?? erroMotivo);
+      return;
+    }
     if (!chamado) return;
     if (!motivoNaoExecucao.trim()) {
       setErroAcao('Informe o motivo por não executar o serviço.');
@@ -110,7 +139,7 @@ export function ArtificeChamadoDetalhe() {
         .from('chamados')
         .update({
           executado: false,
-          motivo_nao_execucao: motivoNaoExecucao.trim(),
+          motivo_nao_execucao: sanitizarTextoPlano(motivoNaoExecucao).trim(),
           status: 'FINALIZADO',
         })
         .eq('id', chamado.id);
@@ -125,6 +154,11 @@ export function ArtificeChamadoDetalhe() {
   }
 
   async function finalizarExecucao() {
+    const erroOrigem = validarOrigemDaAcao();
+    if (erroOrigem) {
+      setErroAcao(erroOrigem);
+      return;
+    }
     if (!chamado) return;
     if (!fotoDepois) {
       setErroAcao('Anexe a foto do "depois" para concluir o chamado.');

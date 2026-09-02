@@ -3,6 +3,7 @@ import { LayoutInterno } from '@/components/LayoutInterno';
 import { supabase } from '@/lib/supabaseClient';
 import type { Condominio } from '@/types/database';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 
 export function AdminCondominios() {
   const [condominios, setCondominios] = useState<Condominio[]>([]);
@@ -39,6 +40,7 @@ export function AdminCondominios() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (validarOrigemDaAcao()) return;
     setErro(null);
 
     if (!nome.trim()) {
@@ -68,6 +70,7 @@ export function AdminCondominios() {
   }
 
   async function excluir(c: Condominio) {
+    if (validarOrigemDaAcao()) return;
     if (!confirm(`Inativar o condomínio "${c.nome}"? Você poderá reativá-lo depois.`)) return;
 
     setErro(null);
@@ -87,6 +90,7 @@ export function AdminCondominios() {
   }
 
   async function reativar(c: Condominio) {
+    if (validarOrigemDaAcao()) return;
     setErro(null);
     setExcluindoId(c.id);
     try {

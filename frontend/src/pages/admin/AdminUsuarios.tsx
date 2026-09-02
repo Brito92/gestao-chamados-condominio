@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import type { PapelUsuario, Usuario } from '@/types/database';
+import { validarOrigemDaAcao } from '@/utils/csrf';
 
 const LABEL_PAPEL: Record<PapelUsuario, string> = {
   ADMIN: 'Síndico / Admin',
@@ -89,6 +90,7 @@ export function AdminUsuarios() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (validarOrigemDaAcao()) return;
     setErro(null);
 
     if (!nome.trim() || !email.trim()) {
@@ -142,6 +144,7 @@ export function AdminUsuarios() {
   }
 
   async function alternarAtivo(u: Usuario) {
+    if (validarOrigemDaAcao()) return;
     // Admin comum não pode desativar outros admins
     if (u.papel === 'ADMIN' && u.id !== usuarioLogado?.id && !isAdminMaster) {
       setErro('Admin comum não pode desativar outros administradores.');
