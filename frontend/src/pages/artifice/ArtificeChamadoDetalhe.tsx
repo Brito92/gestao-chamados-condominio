@@ -74,10 +74,15 @@ export function ArtificeChamadoDetalhe() {
     setProcessando(true);
     setErroAcao(null);
     try {
-      const { error } = await supabase
-        .from('chamados')
-        .update({ status: 'EM_ANDAMENTO', artifice_id: usuario.id })
-        .eq('id', chamado.id);
+      if (chamado.artifice_id && chamado.artifice_id !== usuario.id) {
+        throw new Error('Este chamado esta atribuido a outro artifice.');
+      }
+      if (chamado.status !== 'AGUARDANDO_EXECUCAO') {
+        throw new Error('Este chamado nao esta aguardando execucao.');
+      }
+      const { error } = await supabase.rpc('iniciar_execucao_artifice', {
+        p_chamado_id: chamado.id,
+      });
       if (error) throw error;
       await recarregar();
     } catch (err) {
@@ -222,7 +227,15 @@ export function ArtificeChamadoDetalhe() {
 
   const possuiLock = chamado.assumido_por === usuario?.id &&
     (!chamado.bloqueio_expira_em || new Date(chamado.bloqueio_expira_em).getTime() > Date.now());
-  const bloqueadoPorOutro = Boolean(chamado.assumido_por && !possuiLock);
+  const lockExpirado = Boolean(
+    chamado.bloqueio_expira_em && new Date(chamado.bloqueio_expira_em).getTime() <= Date.now()
+  );
+  const atribuidoAOutro = Boolean(
+    chamado.artifice_id && chamado.artifice_id !== usuario?.id
+  );
+  const bloqueadoPorOutro = atribuidoAOutro || Boolean(
+    chamado.assumido_por && !possuiLock && !lockExpirado
+  );
 
   return (
     <LayoutInterno titulo={chamado.numero_chamado ? `Chamado #${chamado.numero_chamado}` : 'Chamado'}>

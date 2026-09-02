@@ -60,7 +60,7 @@ Após `0009`, aplique também, na ordem, `0010_correcoes_permissoes_historico.sq
 
 ## 2. Rodando o frontend
 
-Depois das migrations 0012 e 0013, aplique tambem `supabase/migrations/0014_audit_log.sql` para registrar alteracoes sensiveis e eventos de login/logout. A CSP do Vite vale para o servidor de desenvolvimento; a politica de producao deve ser configurada no provedor de hospedagem.
+Depois das migrations 0012 e 0013, aplique tambem `supabase/migrations/0014_audit_log.sql` e, em seguida, `supabase/migrations/0015_fix_atribuicao_artifice.sql`. A 0015 corrige a fila do artifice, inicia a execucao por RPC atomica e impede sobrescrita de atribuicao. A CSP do Vite vale para o servidor de desenvolvimento; a politica de producao deve ser configurada no provedor de hospedagem.
 
 ```bash
 cd frontend

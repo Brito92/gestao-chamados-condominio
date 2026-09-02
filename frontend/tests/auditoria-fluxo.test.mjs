@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const migration = await readFile(new URL('../../supabase/migrations/0013_auditoria_fluxo_concorrencia.sql', import.meta.url), 'utf8');
 const auditMigration = await readFile(new URL('../../supabase/migrations/0014_audit_log.sql', import.meta.url), 'utf8');
+const artificeMigration = await readFile(new URL('../../supabase/migrations/0015_fix_atribuicao_artifice.sql', import.meta.url), 'utf8');
 const abrirChamado = await readFile(new URL('../src/pages/publico/AbrirChamado.tsx', import.meta.url), 'utf8');
 const consulta = await readFile(new URL('../src/pages/publico/ConsultarChamado.tsx', import.meta.url), 'utf8');
 const auth = await readFile(new URL('../src/context/AuthContext.tsx', import.meta.url), 'utf8');
@@ -12,6 +13,7 @@ const upload = await readFile(new URL('../src/utils/uploadAnexo.ts', import.meta
 const vite = await readFile(new URL('../vite.config.ts', import.meta.url), 'utf8');
 const compras = await readFile(new URL('../src/pages/compras/ComprasChamadoDetalhe.tsx', import.meta.url), 'utf8');
 const artifice = await readFile(new URL('../src/pages/artifice/ArtificeChamadoDetalhe.tsx', import.meta.url), 'utf8');
+const artificeFila = await readFile(new URL('../src/pages/artifice/ArtificeFila.tsx', import.meta.url), 'utf8');
 
 test('o banco garante protocolo imediato e compatibilidade com dados legados', () => {
   assert.match(migration, /morador_email text/);
@@ -93,4 +95,20 @@ test('auditoria detalhada registra alteracoes e autenticacao', () => {
   assert.match(auditMigration, /registrar_evento_auditoria/);
   assert.match(auth, /p_acao: 'LOGIN'/);
   assert.match(auth, /p_acao: 'LOGOUT'/);
+});
+
+test('the artifice assignment cannot be overwritten', () => {
+  assert.match(artificeMigration, /create or replace function proteger_atribuicao_artifice/);
+  assert.match(artificeMigration, /create or replace function iniciar_execucao_artifice/);
+  assert.match(artificeMigration, /new\.artifice_id is distinct from old\.artifice_id/);
+  assert.match(artificeMigration, /grant execute on function iniciar_execucao_artifice\(uuid\) to authenticated/);
+  assert.match(artifice, /rpc\('iniciar_execucao_artifice'/);
+  assert.doesNotMatch(artifice, /update\(\{ status: 'EM_ANDAMENTO', artifice_id:/);
+});
+
+test('the artifice queue separates free calls from own calls', () => {
+  assert.match(artificeFila, /c\.artifice_id === null/);
+  assert.match(artificeFila, /const lockAtivo/);
+  assert.match(artificeFila, /!lockAtivo/);
+  assert.match(artificeFila, /c\.artifice_id === usuario\?\.id \|\| c\.assumido_por === usuario\?\.id/);
 });
