@@ -9,10 +9,15 @@ export function ArtificeFila() {
 
   // Mostra chamados ainda sem artífice definido (disponíveis para pegar) e
   // os que já estão atribuídos a mim.
-  const disponiveis = chamados.filter(
-    (c) => c.status === 'AGUARDANDO_EXECUCAO' && !c.artifice_id
+  const disponiveis = chamados.filter((c) => {
+    const lockAtivo =
+      c.assumido_por !== null &&
+      (!c.bloqueio_expira_em || new Date(c.bloqueio_expira_em).getTime() > Date.now());
+    return c.status === 'AGUARDANDO_EXECUCAO' && c.artifice_id === null && !lockAtivo;
+  });
+  const meus = chamados.filter(
+    (c) => c.artifice_id === usuario?.id || c.assumido_por === usuario?.id
   );
-  const meus = chamados.filter((c) => c.artifice_id === usuario?.id);
 
   return (
     <LayoutInterno titulo="Execuções">
