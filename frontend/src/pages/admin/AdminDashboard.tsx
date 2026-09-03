@@ -36,10 +36,6 @@ export function AdminDashboard() {
   const [permitirReabertura, setPermitirReabertura] = useState(true);
   const adminMaster = usuario?.papel === 'ADMIN' && usuario.admin_master;
 
-  useEffect(() => {
-    if (!adminMaster && usuario?.condominio_id) setCondominioSelecionado(usuario.condominio_id);
-  }, [adminMaster, usuario?.condominio_id]);
-
   /**
    * Calcula o primeiro e último dia do mês vigente em ISO 8601
    * Necessário para filtrar chamados no Supabase
@@ -174,7 +170,6 @@ export function AdminDashboard() {
                 className="input"
                 value={condominioSelecionado ?? ''}
                 onChange={(e) => setCondominioSelecionado(e.target.value || null)}
-                disabled={!adminMaster && Boolean(usuario?.condominio_id)}
               >
                 <option value="">Todos os condomínios</option>
                 {condominios.map((cond) => (

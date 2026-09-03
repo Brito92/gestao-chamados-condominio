@@ -11,6 +11,7 @@ build/
 coverage/
 *.log
 .DS_Store
+MELHORIAS_SEGURANCA.md
 
 # Android / Capacitor local artifacts
 **/local.properties
