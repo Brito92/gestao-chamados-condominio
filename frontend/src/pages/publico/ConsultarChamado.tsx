@@ -128,6 +128,12 @@ export function ConsultarChamado() {
                 <p className="text-sm text-red-700">{chamado.motivo_rejeicao}</p>
               </div>
             )}
+            {chamado.status === 'NAO_EXECUTADO' && chamado.motivo_nao_execucao && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-red-700 mb-1">Motivo da não execução</p>
+                <p className="text-sm text-red-700">{chamado.motivo_nao_execucao}</p>
+              </div>
+            )}
 
             <div>
               <p className="text-xs text-ardosia-400 mb-2">Histórico</p>

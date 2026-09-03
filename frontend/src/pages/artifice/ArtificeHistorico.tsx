@@ -24,7 +24,7 @@ export function ArtificeHistorico() {
         .from('chamados')
         .select('*')
         .eq('artifice_id', usuario.id)
-        .eq('status', 'FINALIZADO')
+        .in('status', ['FINALIZADO', 'NAO_EXECUTADO'])
         .order('finalizado_em', { ascending: false, nullsFirst: false })
         .returns<Chamado[]>();
 

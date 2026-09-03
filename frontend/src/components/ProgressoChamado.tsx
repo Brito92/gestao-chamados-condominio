@@ -7,7 +7,7 @@ import { ETAPAS_FLUXO_PRINCIPAL, STATUS_META } from '@/utils/statusChamado';
  * aviso dedicado em vez da barra, já que eles saem do fluxo principal.
  */
 export function ProgressoChamado({ status }: { status: StatusChamado }) {
-  if (status === 'REJEITADO' || status === 'CANCELADO') {
+  if (status === 'REJEITADO' || status === 'CANCELADO' || status === 'NAO_EXECUTADO') {
     const meta = STATUS_META[status];
     return (
       <div className={`rounded-xl border border-red-200 ${meta.corBadge} p-4`}>

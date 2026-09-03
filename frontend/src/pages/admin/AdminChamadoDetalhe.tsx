@@ -12,7 +12,7 @@ import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { validarOrigemDaAcao } from '@/utils/csrf';
 import type { Usuario } from '@/types/database';
 
-const NAO_CANCELAVEL = new Set(['FINALIZADO', 'CANCELADO', 'REJEITADO']);
+  const NAO_CANCELAVEL = new Set(['FINALIZADO', 'NAO_EXECUTADO', 'CANCELADO', 'REJEITADO']);
 
 export function AdminChamadoDetalhe() {
   const { id } = useParams<{ id: string }>();

@@ -57,7 +57,7 @@ export function AdminSolicitacaoDetalhe() {
     setErroAcao(null);
     try {
       const updateData: Record<string, unknown> = {
-        status: 'EM_COMPRAS',
+        status: 'ENVIADO_PARA_COMPRAS',
         aprovado_por: usuario?.id ?? null,
       };
       

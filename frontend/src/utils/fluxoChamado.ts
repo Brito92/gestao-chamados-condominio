@@ -2,9 +2,12 @@ import type { Chamado, ChamadoAnexo, StatusChamado } from '@/types/database';
 
 export const SLA_HORAS_POR_STATUS: Partial<Record<StatusChamado, number>> = {
   EM_ANALISE: 24,
+  ENVIADO_PARA_COMPRAS: 24,
   EM_COMPRAS: 48,
+  ENVIADO_PARA_EXECUCAO: 24,
   AGUARDANDO_EXECUCAO: 24,
   EM_ANDAMENTO: 72,
+  PENDENTE: 24,
 };
 
 export type SituacaoSla = 'SEM_SLA' | 'NO_PRAZO' | 'ATRASADO';

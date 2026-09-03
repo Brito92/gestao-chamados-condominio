@@ -10,11 +10,15 @@ export type TipoProblema = 'ELETRICA' | 'HIDRAULICA' | 'REFORMA' | 'OUTROS';
 
 export type StatusChamado =
   | 'EM_ANALISE'
+  | 'ENVIADO_PARA_COMPRAS'
   | 'REJEITADO'
   | 'EM_COMPRAS'
+  | 'ENVIADO_PARA_EXECUCAO'
   | 'AGUARDANDO_EXECUCAO'
   | 'EM_ANDAMENTO'
+  | 'PENDENTE'
   | 'FINALIZADO'
+  | 'NAO_EXECUTADO'
   | 'CANCELADO';
 
 export type TipoAnexo =

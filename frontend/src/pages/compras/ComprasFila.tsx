@@ -3,7 +3,7 @@ import { CartaoChamado } from '@/components/CartaoChamado';
 import { useChamadosPorStatus } from '@/hooks/useChamadosPorStatus';
 
 export function ComprasFila() {
-  const { chamados, carregando } = useChamadosPorStatus(['EM_COMPRAS']);
+  const { chamados, carregando } = useChamadosPorStatus(['ENVIADO_PARA_COMPRAS', 'EM_COMPRAS']);
 
   return (
     <LayoutInterno titulo="Fila de compras">

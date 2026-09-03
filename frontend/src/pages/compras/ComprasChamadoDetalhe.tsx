@@ -135,7 +135,7 @@ export function ComprasChamadoDetalhe() {
       });
 
       const updateData: Record<string, unknown> = {
-        status: 'AGUARDANDO_EXECUCAO',
+        status: 'ENVIADO_PARA_EXECUCAO',
         compras_por: usuario?.id ?? null,
       };
 

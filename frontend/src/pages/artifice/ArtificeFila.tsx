@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export function ArtificeFila() {
   const { usuario } = useAuth();
-  const { chamados, carregando } = useChamadosPorStatus(['AGUARDANDO_EXECUCAO', 'EM_ANDAMENTO']);
+  const { chamados, carregando } = useChamadosPorStatus(['ENVIADO_PARA_EXECUCAO', 'AGUARDANDO_EXECUCAO', 'EM_ANDAMENTO', 'PENDENTE']);
 
   // Mostra chamados ainda sem artífice definido (disponíveis para pegar) e
   // os que já estão atribuídos a mim.
@@ -13,7 +13,7 @@ export function ArtificeFila() {
     const lockAtivo =
       c.assumido_por !== null &&
       (!c.bloqueio_expira_em || new Date(c.bloqueio_expira_em).getTime() > Date.now());
-    return c.status === 'AGUARDANDO_EXECUCAO' && c.artifice_id === null && !lockAtivo;
+    return c.status === 'ENVIADO_PARA_EXECUCAO' && c.artifice_id === null && !lockAtivo;
   });
   const meus = chamados.filter(
     (c) => c.artifice_id === usuario?.id || c.assumido_por === usuario?.id

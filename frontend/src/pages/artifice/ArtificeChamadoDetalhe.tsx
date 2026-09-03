@@ -109,7 +109,10 @@ export function ArtificeChamadoDetalhe() {
     try {
       const { error } = await supabase
         .from('chamados')
-        .update({ observacao_artifice: sanitizarTextoPlano(observacao).trim() || null })
+        .update({
+          observacao_artifice: sanitizarTextoPlano(observacao).trim() || null,
+          status: 'PENDENTE',
+        })
         .eq('id', chamado.id);
       if (error) throw error;
       await recarregar();
@@ -145,7 +148,7 @@ export function ArtificeChamadoDetalhe() {
         .update({
           executado: false,
           motivo_nao_execucao: sanitizarTextoPlano(motivoNaoExecucao).trim(),
-          status: 'FINALIZADO',
+          status: 'NAO_EXECUTADO',
         })
         .eq('id', chamado.id);
       if (error) throw error;
@@ -194,7 +197,7 @@ export function ArtificeChamadoDetalhe() {
 
       const { error } = await supabase
         .from('chamados')
-        .update({ status: 'FINALIZADO' })
+        .update({ status: 'FINALIZADO', executado: true })
         .eq('id', chamado.id);
       if (error) throw error;
 
@@ -295,24 +298,31 @@ export function ArtificeChamadoDetalhe() {
           <div className="card"><HistoricoChamado historico={chamado.historico} /></div>
         </div>
 
-        {!possuiLock && chamado.status !== 'FINALIZADO' && (
+        {!possuiLock && !['FINALIZADO', 'NAO_EXECUTADO'].includes(chamado.status) && (
           <div className="card flex flex-col gap-2 border-ambar-500/40">
             <p className="text-sm text-ardosia-700">{bloqueadoPorOutro ? 'Este chamado está sendo atendido por outro artífice.' : 'Assuma o chamado para iniciar ou atualizar a execução.'}</p>
             {!bloqueadoPorOutro && <button className="btn-primario" onClick={assumir} disabled={processando}>{processando ? 'Assumindo...' : 'Assumir atendimento'}</button>}
           </div>
         )}
 
-        {possuiLock && chamado.status === 'AGUARDANDO_EXECUCAO' && (
+        {possuiLock && chamado.status === 'AGUARDANDO_EXECUCAO' && modoAcao === 'normal' && (
           <div className="flex flex-col gap-2">
             {erroAcao && <p className="text-sm text-red-600">{erroAcao}</p>}
             <button className="btn-primario" onClick={iniciarExecucao} disabled={processando}>
               {processando ? 'Iniciando...' : 'Iniciar execução'}
             </button>
+            <button
+              className="btn-perigo"
+              onClick={() => setModoAcao('marcar_nao_executado')}
+              disabled={processando}
+            >
+              Não foi executado
+            </button>
             <button className="btn-secundario" onClick={liberar} disabled={processando}>Liberar chamado</button>
           </div>
         )}
 
-        {possuiLock && chamado.status === 'EM_ANDAMENTO' && modoAcao === 'normal' && (
+        {possuiLock && ['EM_ANDAMENTO', 'PENDENTE'].includes(chamado.status) && modoAcao === 'normal' && (
           <div className="card flex flex-col gap-3">
             <p className="text-sm text-ardosia-600">
               Registre as fotos de antes e depois para concluir o chamado.
@@ -344,7 +354,7 @@ export function ArtificeChamadoDetalhe() {
           </div>
         )}
 
-        {possuiLock && chamado.status === 'EM_ANDAMENTO' && modoAcao === 'marcar_nao_executado' && (
+        {possuiLock && ['AGUARDANDO_EXECUCAO', 'EM_ANDAMENTO', 'PENDENTE'].includes(chamado.status) && modoAcao === 'marcar_nao_executado' && (
           <div className="card flex flex-col gap-3">
             <p className="text-sm text-ardosia-700 font-semibold">Motivo da não execução</p>
             <label className="block">
@@ -379,7 +389,7 @@ export function ArtificeChamadoDetalhe() {
           </div>
         )}
 
-        {possuiLock && chamado.status === 'EM_ANDAMENTO' && (
+        {possuiLock && ['EM_ANDAMENTO', 'PENDENTE'].includes(chamado.status) && (
           <div className="card flex flex-col gap-3">
             <label className="block">
               <span className="block text-sm font-medium text-ardosia-700 mb-1.5">
@@ -407,9 +417,9 @@ export function ArtificeChamadoDetalhe() {
           </div>
         )}
 
-        {chamado.status === 'FINALIZADO' && (
+        {['FINALIZADO', 'NAO_EXECUTADO'].includes(chamado.status) && (
           <div className="card bg-emerald-50 border-emerald-200 text-center">
-            <p className="text-emerald-700 font-semibold">Chamado concluído ✓</p>
+            <p className="text-emerald-700 font-semibold">{chamado.status === 'FINALIZADO' ? 'Chamado concluído ✓' : 'Chamado não executado'}</p>
           </div>
         )}
       </div>
