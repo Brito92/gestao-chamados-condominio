@@ -2,7 +2,10 @@
 .env
 .env.*
 !.env.example
+*.tsbuildinfo
 !frontend/.env.example
+supabase/.temp/
+frontend/supabase/.temp/
 
 # Local app/runtime files
 node_modules/
@@ -12,6 +15,9 @@ coverage/
 *.log
 .DS_Store
 MELHORIAS_SEGURANCA.md
+AUDITORIA_FLUXO_CHAMADOS.md
+HISTORICO_INTERACAO_SEGURANCA.md
+
 
 # Android / Capacitor local artifacts
 **/local.properties
@@ -21,3 +27,5 @@ MELHORIAS_SEGURANCA.md
 
 # Supabase local temp files
 frontend/supabase/.temp/
+supabase/.temp/
+frontend/tsconfig.tsbuildinfo

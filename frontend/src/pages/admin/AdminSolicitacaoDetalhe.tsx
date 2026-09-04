@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LayoutInterno } from '@/components/LayoutInterno';
 import { BackButton } from '@/components/BackButton';
 import { CampoFoto } from '@/components/CampoFoto';
-import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
@@ -13,6 +12,7 @@ import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
 import { validarOrigemDaAcao } from '@/utils/csrf';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import type { Usuario } from '@/types/database';
+import { AnexoImagemPrivada } from '@/components/AnexoImagemPrivada';
 
 type Acao = 'aprovar' | 'rejeitar' | null;
 
@@ -183,7 +183,7 @@ export function AdminSolicitacaoDetalhe() {
           {foto && (
             <div>
               <p className="text-xs text-ardosia-400 mb-2">Foto anexada</p>
-              <VisualizadorImagem
+              <AnexoImagemPrivada
                 url={foto.url}
                 alt="Foto do problema relatado"
                 className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full"

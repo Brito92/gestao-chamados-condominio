@@ -5,15 +5,20 @@ import { HistoricoChamado } from '@/components/HistoricoChamado';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
-import { VisualizadorImagem } from '@/components/VisualizadorImagem';
+import { AnexoImagemPrivada } from '@/components/AnexoImagemPrivada';
 import { supabase } from '@/lib/supabaseClient';
 import { sanitizarTextoPlano, validarTextoLivre } from '@/utils/sanitizar';
 import { validarOrigemDaAcao } from '@/utils/csrf';
 
 export function ConsultarChamado() {
   const [numeroBusca, setNumeroBusca] = usePersistedState('rascunho:publico:consulta', '');
+  const [contatoBusca, setContatoBusca] = usePersistedState('rascunho:publico:consulta-contato', '');
   const [numeroConsultado, setNumeroConsultado] = usePersistedState<string | null>(
     'rascunho:publico:consulta-enviada',
+    null,
+  );
+  const [contatoConsultado, setContatoConsultado] = usePersistedState<string | null>(
+    'rascunho:publico:consulta-contato-enviado',
     null,
   );
   const [contatoReabertura, setContatoReabertura] = usePersistedState('rascunho:publico:reabertura-contato', '');
@@ -22,7 +27,10 @@ export function ConsultarChamado() {
   const [erroReabertura, setErroReabertura] = useState<string | null>(null);
   const [reaberturaEnviada, setReaberturaEnviada] = useState(false);
 
-  const { chamado, carregando, erro, recarregar } = useChamadoCompleto({ numeroChamado: numeroConsultado ?? undefined });
+  const { chamado, carregando, erro, recarregar } = useChamadoCompleto({
+    numeroChamado: numeroConsultado ?? undefined,
+    contatoPublico: contatoConsultado ?? undefined,
+  });
 
   async function solicitarReabertura() {
     const erroOrigem = validarOrigemDaAcao();
@@ -59,15 +67,16 @@ export function ConsultarChamado() {
       <div className="flex flex-col gap-4">
         <p className="text-sm text-ardosia-500">
           Digite o número do chamado que você recebeu pelo WhatsApp após a aprovação da sua
-          solicitação.
+          solicitação e confirme o contato usado na abertura.
         </p>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             setNumeroConsultado(numeroBusca.trim());
+            setContatoConsultado(contatoBusca.trim());
           }}
-          className="flex gap-2"
+          className="flex flex-col gap-3 sm:flex-row"
         >
           <input
             className="input flex-1 font-mono tracking-wide"
@@ -75,9 +84,15 @@ export function ConsultarChamado() {
             value={numeroBusca}
             onChange={(e) => setNumeroBusca(e.target.value)}
           />
+          <input
+            className="input flex-1"
+            placeholder="E-mail ou WhatsApp"
+            value={contatoBusca}
+            onChange={(e) => setContatoBusca(e.target.value)}
+          />
           <button
             type="submit"
-            className="bg-ardosia-800 text-white font-semibold rounded-xl px-5"
+            className="bg-ardosia-800 text-white font-semibold rounded-xl px-5 py-3"
           >
             Buscar
           </button>
@@ -140,7 +155,7 @@ export function ConsultarChamado() {
               {chamado.anexos.filter((a) => a.tipo === 'ANEXO_REJEICAO' || a.tipo === 'FOTO_DEPOIS').map((anexo) => (
                 <div key={anexo.id} className="mb-4">
                   <p className="text-xs text-ardosia-400 mb-2">{anexo.tipo === 'ANEXO_REJEICAO' ? 'Anexo da rejeição' : 'Foto da conclusão'}</p>
-                  <VisualizadorImagem url={anexo.url} alt="Anexo do chamado" className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full" />
+                  <AnexoImagemPrivada url={anexo.url} alt="Anexo do chamado" className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full" />
                 </div>
               ))}
 

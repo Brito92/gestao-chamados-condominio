@@ -23,8 +23,9 @@ interface UseChamadoCompletoResult {
 export function useChamadoCompleto(params: {
   id?: string;
   numeroChamado?: string;
+  contatoPublico?: string;
 }): UseChamadoCompletoResult {
-  const { id, numeroChamado } = params;
+  const { id, numeroChamado, contatoPublico } = params;
   const [chamado, setChamado] = useState<ChamadoCompleto | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -35,7 +36,10 @@ export function useChamadoCompleto(params: {
 
     if (!id && numeroChamado) {
       const { data, error } = await supabase
-        .rpc('consultar_chamado_publico', { p_numero_chamado: numeroChamado })
+        .rpc('consultar_chamado_publico', {
+          p_numero_chamado: numeroChamado,
+          p_contato: contatoPublico ?? '',
+        })
         .maybeSingle<ChamadoPublicoRpc>();
 
       if (error) {
@@ -115,7 +119,7 @@ export function useChamadoCompleto(params: {
       artifice: chamadoData.artifice_id ? usuariosPorId.get(chamadoData.artifice_id) ?? null : null,
     });
     setCarregando(false);
-  }, [id, numeroChamado]);
+  }, [id, numeroChamado, contatoPublico]);
 
   useEffect(() => {
     if (id || numeroChamado) carregar();
