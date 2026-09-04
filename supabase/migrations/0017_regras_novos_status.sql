@@ -311,6 +311,7 @@ $$;
 
 -- A leitura interna é ampla por regra de negócio; edição continua restrita.
 drop policy if exists "chamados_select_interno" on chamados;
+drop policy if exists "chamados_select_equipe_todos_condominios" on chamados;
 create policy "chamados_select_equipe_todos_condominios" on chamados
   for select to authenticated using (meu_papel() is not null);
 

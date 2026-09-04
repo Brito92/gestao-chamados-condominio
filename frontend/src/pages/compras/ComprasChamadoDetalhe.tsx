@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LayoutInterno } from '@/components/LayoutInterno';
 import { BackButton } from '@/components/BackButton';
 import { CampoFoto } from '@/components/CampoFoto';
-import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +13,7 @@ import { validarOrigemDaAcao } from '@/utils/csrf';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
 import type { Usuario } from '@/types/database';
+import { AnexoImagemPrivada } from '@/components/AnexoImagemPrivada';
 
 type Modo = 'menu' | 'com_compra' | 'sem_compra';
 
@@ -265,7 +265,7 @@ export function ComprasChamadoDetalhe() {
           {chamado.anexos.filter(a => a.tipo === 'FOTO_SOLICITACAO').map((foto) => (
             <div key={foto.id}>
               <p className="text-xs text-ardosia-400 mb-2">Foto da solicitação</p>
-              <VisualizadorImagem
+              <AnexoImagemPrivada
                 url={foto.url}
                 alt="Foto do problema relatado"
                 className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full"

@@ -5,6 +5,7 @@ import test from 'node:test';
 const migration = await readFile(new URL('../../supabase/migrations/0013_auditoria_fluxo_concorrencia.sql', import.meta.url), 'utf8');
 const auditMigration = await readFile(new URL('../../supabase/migrations/0014_audit_log.sql', import.meta.url), 'utf8');
 const artificeMigration = await readFile(new URL('../../supabase/migrations/0015_fix_atribuicao_artifice.sql', import.meta.url), 'utf8');
+const securityMigration = await readFile(new URL('../../supabase/migrations/0018_consulta_publica_e_storage_hardening.sql', import.meta.url), 'utf8');
 const abrirChamado = await readFile(new URL('../src/pages/publico/AbrirChamado.tsx', import.meta.url), 'utf8');
 const consulta = await readFile(new URL('../src/pages/publico/ConsultarChamado.tsx', import.meta.url), 'utf8');
 const auth = await readFile(new URL('../src/context/AuthContext.tsx', import.meta.url), 'utf8');
@@ -26,6 +27,13 @@ test('o fluxo possui transição de reabertura, motivo e RPC público autenticad
   assert.match(migration, /create or replace function reabrir_chamado/);
   assert.match(migration, /Contato não confere com o chamado/);
   assert.match(consulta, /reabrir_chamado/);
+});
+
+test('a consulta publica exige contato do morador', () => {
+  assert.match(securityMigration, /create or replace function consultar_chamado_publico\(\s*p_numero_chamado text,\s*p_contato text/s);
+  assert.match(securityMigration, /Contato não confere com o chamado/);
+  assert.match(consulta, /consulta-contato/);
+  assert.match(consulta, /p_contato/);
 });
 
 test('a abertura exige e-mail e passa por revisão antes do envio', () => {
@@ -81,6 +89,9 @@ test('uploads validam MIME, tamanho e assinatura do arquivo', () => {
   assert.match(upload, /TAMANHO_MAXIMO/);
   assert.match(upload, /validarMagicBytes/);
   assert.match(upload, /arrayBuffer/);
+  assert.match(upload, /crypto\.randomUUID/);
+  assert.match(securityMigration, /metadata->>'mimetype'/);
+  assert.match(securityMigration, /chamados_anexos_storage_insert/);
 });
 
 test('CSP e aplicada pelo servidor de desenvolvimento do Vite', () => {

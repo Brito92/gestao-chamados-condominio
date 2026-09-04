@@ -77,22 +77,28 @@ export async function enviarAnexoChamado(params: {
 
   await validarArquivoAnexo(arquivo, tipo);
   const extensao = EXTENSAO_POR_MIME[arquivo.type];
-  const caminho = `${chamadoId}/${tipo.toLowerCase()}-${Date.now()}.${extensao}`;
+  const caminho = `${chamadoId}/${tipo.toLowerCase()}-${crypto.randomUUID()}.${extensao}`;
 
   const { error: erroUpload } = await supabase.storage
     .from(BUCKET_ANEXOS)
-    .upload(caminho, arquivo, { cacheControl: '3600', upsert: false });
+    .upload(caminho, arquivo, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: arquivo.type,
+      metadata: {
+        mimetype: arquivo.type,
+        size: String(arquivo.size),
+  },
+});
 
   if (erroUpload) {
     throw new Error(`Falha ao enviar arquivo: ${erroUpload.message}`);
   }
 
-  const { data: publicUrlData } = supabase.storage.from(BUCKET_ANEXOS).getPublicUrl(caminho);
-
   const { error: erroInsert } = await supabase.from('chamado_anexos').insert({
     chamado_id: chamadoId,
     tipo,
-    url: publicUrlData.publicUrl,
+    url: caminho,
     descricao: descricao ?? null,
     valor: valor ?? null,
     enviado_por: enviadoPor ?? null,

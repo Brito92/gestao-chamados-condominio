@@ -4,13 +4,13 @@ import { LayoutInterno } from '@/components/LayoutInterno';
 import { BackButton } from '@/components/BackButton';
 import { ProgressoChamado } from '@/components/ProgressoChamado';
 import { HistoricoChamado } from '@/components/HistoricoChamado';
-import { VisualizadorImagem } from '@/components/VisualizadorImagem';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TIPO_PROBLEMA_LABEL } from '@/utils/statusChamado';
 import { validarOrigemDaAcao } from '@/utils/csrf';
 import type { Usuario } from '@/types/database';
+import { AnexoImagemPrivada } from '@/components/AnexoImagemPrivada';
 
   const NAO_CANCELAVEL = new Set(['FINALIZADO', 'NAO_EXECUTADO', 'CANCELADO', 'REJEITADO']);
 
@@ -241,7 +241,7 @@ export function AdminChamadoDetalhe() {
                     {a.tipo === 'FOTO_DEPOIS' && 'Foto depois'}
                     {a.valor && ` - R$ ${a.valor}`}
                   </p>
-                  <VisualizadorImagem
+                  <AnexoImagemPrivada
                     url={a.url}
                     alt={a.tipo}
                     className="rounded-lg border border-ardosia-100 h-32 w-full object-cover"

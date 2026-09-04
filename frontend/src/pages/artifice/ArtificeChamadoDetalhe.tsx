@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LayoutInterno } from '@/components/LayoutInterno';
 import { BackButton } from '@/components/BackButton';
 import { CampoFoto } from '@/components/CampoFoto';
-import { VisualizadorImagem } from '@/components/VisualizadorImagem';
+import { AnexoImagemPrivada } from '@/components/AnexoImagemPrivada';
 import { ProgressoChamado } from '@/components/ProgressoChamado';
 import { useChamadoCompleto } from '@/hooks/useChamadoCompleto';
 import { usePersistedState } from '@/hooks/usePersistedState';
@@ -284,7 +284,7 @@ export function ArtificeChamadoDetalhe() {
           {chamado.anexos.filter(a => a.tipo === 'FOTO_SOLICITACAO').map((foto) => (
             <div key={foto.id}>
               <p className="text-xs text-ardosia-400 mb-2">Foto da solicitação</p>
-              <VisualizadorImagem
+              <AnexoImagemPrivada
                 url={foto.url}
                 alt="Foto do problema relatado"
                 className="rounded-xl border border-ardosia-100 max-h-56 object-cover w-full"
